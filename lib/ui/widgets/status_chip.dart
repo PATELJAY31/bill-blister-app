@@ -1,56 +1,96 @@
 import 'package:flutter/material.dart';
 import '../../models/claim.dart';
+import '../../theme/app_theme.dart';
 
 class StatusChip extends StatelessWidget {
   final ClaimStatus status;
+  final bool isCompact;
 
-  const StatusChip({super.key, required this.status});
+  const StatusChip({
+    super.key, 
+    required this.status,
+    this.isCompact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final Color text;
-    final Color bg;
+    final Color textColor;
+    final Color backgroundColor;
+    final IconData icon;
+    
     switch (status) {
       case ClaimStatus.approved:
-        text = const Color(0xFF0A7A32);
-        bg = const Color(0xFF0A7A32).withOpacity(0.10);
+        textColor = success;
+        backgroundColor = successLight;
+        icon = Icons.check_circle_rounded;
         break;
       case ClaimStatus.rejected:
-        text = const Color(0xFFB91C1C);
-        bg = const Color(0xFFB91C1C).withOpacity(0.10);
+        textColor = error;
+        backgroundColor = errorLight;
+        icon = Icons.cancel_rounded;
         break;
       case ClaimStatus.pending:
-      default:
-        text = const Color(0xFF160C52);
-        bg = const Color(0xFF160C52).withOpacity(0.10);
+        textColor = warning;
+        backgroundColor = warningLight;
+        icon = Icons.schedule_rounded;
         break;
     }
 
     String label;
     switch (status) {
       case ClaimStatus.approved:
-        label = 'APPROVED';
+        label = 'Approved';
         break;
       case ClaimStatus.rejected:
-        label = 'REJECTED';
+        label = 'Rejected';
         break;
       case ClaimStatus.pending:
-        label = 'PENDING';
+        label = 'Pending';
         break;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 8 : 12,
+        vertical: isCompact ? 4 : 6,
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: text,
-          fontWeight: FontWeight.w700,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: textColor.withOpacity(0.2),
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: textColor.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: isCompact ? 14 : 16,
+            color: textColor,
+          ),
+          if (!isCompact) ...[
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: textColor,
+                fontSize: isCompact ? 12 : 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

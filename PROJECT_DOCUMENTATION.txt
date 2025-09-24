@@ -1,0 +1,455 @@
+================================================================================
+                           BILL BLISTER APP - PROJECT DOCUMENTATION
+================================================================================
+
+PROJECT OVERVIEW
+================
+Bill Blister is a Flutter-based mobile application for expense management and 
+claim processing. It's designed for companies to manage employee expense claims,
+cash allocations, and approval workflows in a streamlined digital environment.
+
+PROJECT METADATA
+================
+- Project Name: Bill Blister App (billblisters)
+- Framework: Flutter 3.5.2+
+- Language: Dart
+- Platform Support: Android, iOS, Web, Windows, macOS, Linux
+- Architecture: Clean Architecture with MVVM pattern
+- State Management: StatefulWidget (local state management)
+- Navigation: Named routes with custom router
+
+TECHNICAL STACK
+===============
+Core Framework:
+- Flutter SDK 3.5.2+
+- Dart Language
+- Material Design 3
+
+Dependencies:
+- cupertino_icons: ^1.0.8 (iOS-style icons)
+- image_picker: ^1.1.2 (Camera and gallery access)
+- file_picker: ^8.0.3 (File selection)
+- permission_handler: ^11.3.1 (Device permissions)
+
+Development Dependencies:
+- flutter_test (Testing framework)
+- flutter_lints: ^4.0.0 (Code quality)
+
+PROJECT STRUCTURE
+=================
+lib/
+├── main.dart                     # Application entry point
+├── models/                       # Data models
+│   ├── claim.dart               # Expense claim data model
+│   └── receipt_attachment.dart  # File attachment model
+├── router/
+│   └── app_router.dart          # Navigation configuration
+├── theme/
+│   └── app_theme.dart           # Design system and theming
+├── ui/
+│   ├── shell/
+│   │   └── app_shell.dart       # Common app layout wrapper
+│   ├── pages/                   # Main application screens
+│   │   ├── amount_allocation_page.dart
+│   │   ├── add_allocation_page.dart
+│   │   ├── add_bill_page.dart
+│   │   ├── claim_approval_page.dart
+│   │   ├── claim_verification_page.dart
+│   │   ├── expense_claim_new_page.dart
+│   │   ├── expense_claim_page.dart
+│   │   └── notifications_page.dart
+│   └── widgets/                 # Reusable UI components
+│       ├── app_drawer.dart
+│       ├── empty_state.dart
+│       ├── filter_sheet.dart
+│       ├── icon_badge.dart
+│       ├── info_row.dart
+│       ├── kv_row.dart
+│       ├── receipt_picker.dart
+│       ├── status_chip.dart
+│       ├── um_drawer_header.dart
+│       ├── um_drawer.dart
+│       └── um_menu_item.dart
+└── utils/                       # Utilities and constants
+    ├── constants.dart
+    ├── nav_utils.dart
+    └── permissions.dart
+
+CORE FUNCTIONALITY
+==================
+
+1. AMOUNT ALLOCATION MANAGEMENT
+   Purpose: Track and manage cash allocations to employees
+   Features:
+   - Grid/list view of allocations with employee details
+   - Filtering capabilities (employee name, expense type)
+   - Total cash issued calculation and display
+   - Responsive design (mobile/tablet layouts)
+   - Mock data with realistic allocation records
+   - Interactive cards with tap functionality
+   - Real-time total calculation
+
+2. EXPENSE CLAIM SYSTEM
+   Purpose: Allow employees to submit expense claims
+   Features:
+   - New Claim Creation:
+     * Expense type selection (Food, Travel, Office Supplies, etc.)
+     * LPO (Local Purchase Order) number assignment
+     * Bill number and amount entry with validation
+     * Bill date selection with date picker
+     * Receipt attachment (Camera, Gallery, Files)
+     * Notes field for additional information
+     * Form validation with real-time feedback
+     * File type support (Images: JPG, PNG, PDFs)
+   - Claim Viewing: Display existing claim details
+   - File Management: Multi-source attachment system
+
+3. CLAIM VERIFICATION WORKFLOW
+   Purpose: Engineer-level approval process
+   Features:
+   - Receipt preview with zoom functionality
+   - Detailed claim information display
+   - Approve/Reject actions with confirmation
+   - Rejection reason input with bottom sheet
+   - Status tracking (Pending, Approved, Rejected)
+   - Visual status indicators with icons
+
+4. CLAIM APPROVAL (HO Level)
+   Purpose: Higher-level approval for verified claims
+   Status: Currently shows empty state (placeholder for future implementation)
+   Features:
+   - Empty state with call-to-action buttons
+   - Placeholder for future approval workflow
+
+5. NOTIFICATIONS SYSTEM
+   Purpose: Alert users about important updates
+   Status: Basic navigation implemented
+   Features:
+   - Navigation to notifications page
+   - Bell icon in app header
+
+DESIGN SYSTEM
+=============
+
+Color Palette:
+- Primary Navy: #1A1B3A (main brand color)
+- Navy Light: #2D2E5A (secondary navy)
+- Navy Dark: #0F0F2A (dark navy)
+- On Navy: #FFFFFF (text on navy backgrounds)
+- On Navy Secondary: #E8E9F0 (secondary text on navy)
+
+Text Colors:
+- Text Primary: #1A1B3A (main text)
+- Text Secondary: #6B7280 (secondary text)
+- Text Tertiary: #9CA3AF (tertiary text)
+- Text Disabled: #D1D5DB (disabled text)
+
+Status Colors:
+- Success: #10B981 (approved states)
+- Success Light: #D1FAE5 (success backgrounds)
+- Warning: #F59E0B (pending states)
+- Warning Light: #FEF3C7 (warning backgrounds)
+- Error: #EF4444 (rejected states)
+- Error Light: #FEE2E2 (error backgrounds)
+- Info: #3B82F6 (information states)
+- Info Light: #DBEAFE (info backgrounds)
+
+Surface Colors:
+- Surface: #FFFFFF (main surface)
+- Surface Secondary: #F8F9FB (secondary surface)
+- Surface Tertiary: #F1F2F4 (tertiary surface)
+- Surface Elevated: #FFFFFF (elevated surface)
+
+Border & Divider Colors:
+- Divider: #E5E7EB (main dividers)
+- Divider Light: #F3F4F6 (light dividers)
+- Border: #E5E7EB (main borders)
+- Border Light: #F3F4F6 (light borders)
+
+Typography:
+- Headlines: 32px/28px/24px with varying weights
+- Titles: 20px/16px/14px with 600 weight
+- Body: 16px/14px/12px with 400 weight
+- Labels: 14px/12px/10px with 500 weight
+- Letter spacing: Optimized for readability
+
+UI COMPONENTS
+=============
+
+1. App Shell
+   - Custom header with gradient background
+   - Navigation drawer integration
+   - Action buttons (notifications, add, filter)
+   - Responsive design
+   - Material ripple effects
+
+2. Status Chips
+   - Visual status indicators
+   - Icons for better recognition
+   - Color-coded states
+   - Smooth animations
+   - Compact mode support
+
+3. Info Rows & KV Rows
+   - Key-value pair display
+   - Consistent typography
+   - Tap functionality support
+   - Responsive design
+   - Better visual hierarchy
+
+4. Empty States
+   - Engaging visual design
+   - Gradient backgrounds
+   - Action buttons
+   - Responsive layout
+   - Clear messaging
+
+5. Form Components
+   - Enhanced input fields
+   - Better validation states
+   - Focus indicators
+   - Error handling
+   - Consistent styling
+
+NAVIGATION SYSTEM
+================
+- Named Routes: Clean URL-based navigation
+- App Router: Centralized route management
+- Drawer Menu: Side navigation with current page highlighting
+- Back Button Handling: Smart back navigation with confirmation dialogs
+- Route Guards: Form validation before navigation
+
+Routes:
+- /amount-allocation (Default)
+- /expense-claim
+- /expense-claim/new
+- /claim-verification
+- /claim-approval
+- /notifications
+- /add-allocation
+
+DATA MODELS
+===========
+
+Claim Model:
+- employeeName: String
+- expenseType: String
+- lpoNumber: String? (optional)
+- billDate: String (DD-MM-YYYY format)
+- submittedDate: String
+- billAmount: double
+- engineerStatus: ClaimStatus (pending/approved/rejected)
+- hoStatus: ClaimStatus (pending/approved/rejected)
+- receiptPath: String? (local file path)
+
+ReceiptAttachment Model:
+- name: String (file name)
+- path: String (file path)
+- mimeType: String (MIME type)
+- isImage: bool (image or document)
+
+Allocation Model:
+- allocationDate: DateTime
+- employeeName: String
+- expenseType: String
+- lpoNumber: String?
+- cashIssued: double
+- updatedOn: DateTime
+- updatedBy: String
+
+FILE MANAGEMENT
+===============
+- Multi-source Attachments: Camera, gallery, file picker
+- File Type Support: Images (JPG, PNG) and PDFs
+- Preview Functionality: Image zoom, PDF placeholder
+- Permission Handling: Camera and storage permissions
+- File Validation: Type and size validation
+- Maximum Attachments: 5 files per claim
+
+RESPONSIVE DESIGN
+=================
+- Mobile: ≤360px (compact mode)
+- Tablet: ≥720px (grid layout)
+- Desktop: Full responsive design
+- Breakpoints: Dynamic layout adjustments
+- Touch Targets: Optimized for mobile interaction
+- Typography: Scalable text sizes
+
+FORM HANDLING
+=============
+- Real-time Validation: Immediate feedback
+- Dirty State Tracking: Warns about unsaved changes
+- Field Validation: Required fields, format validation
+- Error States: Clear error messaging
+- Success States: Confirmation feedback
+- Keyboard Navigation: Proper tab order
+
+ANIMATIONS & TRANSITIONS
+========================
+- Smooth Transitions: Page navigation
+- State Animations: Button states, form validation
+- Loading States: Progress indicators
+- Micro-interactions: Button presses, form focus
+- Status Changes: Animated status updates
+- Card Interactions: Hover and tap effects
+
+ACCESSIBILITY FEATURES
+=====================
+- Semantic Labels: Screen reader support
+- Focus Management: Keyboard navigation
+- Color Contrast: WCAG compliant colors
+- Touch Targets: Minimum 44px touch targets
+- Text Scaling: Responsive text sizes
+- Screen Reader: Proper labeling
+
+DEVELOPMENT STATUS
+==================
+
+Completed Features:
+✅ Amount allocation viewing and management
+✅ Expense claim creation with full form
+✅ Receipt attachment system
+✅ Claim verification workflow
+✅ Responsive UI design
+✅ Navigation system
+✅ Enhanced theming and design system
+✅ Component library
+✅ Form validation
+✅ File handling
+✅ Status management
+✅ Empty states
+✅ Loading states
+
+In Progress/Placeholder:
+🔄 Claim approval (HO level) - empty state
+🔄 Notifications - basic navigation only
+🔄 Backend integration - currently using mock data
+
+Technical Debt:
+- No external state management (could benefit from Provider/Riverpod)
+- Mock data instead of real API integration
+- Limited error handling for network failures
+- No offline support
+- No data persistence
+
+MOCK DATA
+=========
+The application currently uses mock data for development:
+
+Allocations:
+- Saloni Jadav - Food - ₹100.00
+- Nehal - Travel - ₹450.50 (LPO-0031)
+- Aarav - Supplies - ₹20.00
+
+Claims:
+- Sample claim with Conference & trade show registration
+- Mock receipt attachment
+- Status tracking examples
+
+GETTING STARTED
+===============
+1. Prerequisites:
+   - Flutter SDK 3.5.2+
+   - Dart SDK
+   - Android Studio / VS Code
+   - Device or emulator
+
+2. Installation:
+   ```bash
+   git clone <repository-url>
+   cd bill-blister-app
+   flutter pub get
+   ```
+
+3. Running the App:
+   ```bash
+   flutter run
+   ```
+
+4. Building for Production:
+   ```bash
+   flutter build apk --release
+   flutter build ios --release
+   flutter build web --release
+   ```
+
+CONFIGURATION
+=============
+- Default Route: /amount-allocation
+- Company Name: Bill Blisters
+- Theme: Light theme (Material 3)
+- Platform: Cross-platform support
+
+FUTURE ENHANCEMENTS
+==================
+1. Backend Integration:
+   - REST API integration
+   - Real-time data synchronization
+   - User authentication
+   - Data persistence
+
+2. Advanced Features:
+   - Push notifications
+   - Offline support
+   - Advanced filtering
+   - Export functionality
+   - Analytics dashboard
+
+3. UI/UX Improvements:
+   - Dark theme support
+   - Advanced animations
+   - Custom illustrations
+   - Enhanced accessibility
+
+4. Performance:
+   - State management optimization
+   - Image optimization
+   - Caching strategies
+   - Performance monitoring
+
+TECHNICAL SPECIFICATIONS
+========================
+- Minimum SDK: Android API 21 (Android 5.0)
+- Target SDK: Latest stable
+- Architecture: ARM64, ARMv7, x86_64
+- Permissions: Camera, Storage, Internet
+- Dependencies: 4 main packages
+- Code Quality: Flutter Lints enabled
+- Testing: Widget tests included
+
+BUILD CONFIGURATION
+===================
+- Android: Gradle build system
+- iOS: Xcode project
+- Web: Flutter web compilation
+- Windows: CMake build system
+- macOS: Xcode project
+- Linux: CMake build system
+
+DEPLOYMENT
+==========
+- Android: APK/AAB generation
+- iOS: App Store distribution
+- Web: Static hosting
+- Desktop: Platform-specific installers
+
+MAINTENANCE
+===========
+- Code Organization: Clean architecture
+- Documentation: Comprehensive inline docs
+- Version Control: Git with semantic versioning
+- Dependencies: Regular updates
+- Testing: Automated testing pipeline
+
+SUPPORT
+=======
+- Platform: Flutter/Dart
+- Documentation: Inline code documentation
+- Issues: GitHub issue tracking
+- Updates: Regular Flutter SDK updates
+
+================================================================================
+This documentation provides a comprehensive overview of the Bill Blister App
+project, including technical specifications, features, architecture, and
+development guidelines.
+================================================================================

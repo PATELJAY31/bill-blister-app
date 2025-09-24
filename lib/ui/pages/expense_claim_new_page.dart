@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../shell/app_shell.dart';
 import '../../models/receipt_attachment.dart';
 import '../../utils/permissions.dart';
+import '../../theme/app_theme.dart';
 
 class ExpenseClaimNewPage extends StatefulWidget {
   const ExpenseClaimNewPage({super.key});
@@ -408,16 +409,29 @@ class _ExpenseClaimNewPageState extends State<ExpenseClaimNewPage> {
     final valid = _expenseTypeCtrl.text.isNotEmpty &&
         _billNoCtrl.text.trim().isNotEmpty &&
         double.tryParse(_amountCtrl.text.replaceAll(',', '')) != null;
-    return SizedBox(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       height: 58,
-      child: FilledButton(
+      child: FilledButton.icon(
         onPressed: valid ? _submit : null,
-        style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF160C52),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        icon: const Icon(Icons.send_rounded, size: 20),
+        label: const Text(
+          'Submit Claim',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.1,
+          ),
         ),
-        child: const Text('Submit'),
+        style: FilledButton.styleFrom(
+          backgroundColor: valid ? navy : textDisabled,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: valid ? 4 : 0,
+          shadowColor: valid ? navy.withOpacity(0.3) : Colors.transparent,
+        ),
       ),
     );
   }
@@ -640,30 +654,54 @@ class _RoundedField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        height: 58,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFEFEFEF),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerLeft,
-        child: Row(
-          children: [
-            Text(label + (required ? ' *' : '')),
-            const Spacer(),
-            Flexible(
-              child: Text(
-                valueText,
-                style: const TextStyle(color: Color(0xFF6B7280)),
-                overflow: TextOverflow.ellipsis,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 58,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: surfaceTertiary,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: border),
+          ),
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              Text(
+                label + (required ? ' *' : ''),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: textPrimary,
+                  letterSpacing: 0.1,
+                ),
               ),
-            ),
-            const Icon(Icons.expand_more),
-          ],
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  valueText,
+                  style: TextStyle(
+                    color: valueText == 'Select expense type' || valueText == 'None'
+                        ? textTertiary
+                        : textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.1,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.expand_more_rounded,
+                color: textSecondary,
+                size: 20,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -706,11 +744,49 @@ class _RoundedTextField extends StatelessWidget {
         onEditingComplete: onEditingComplete,
         maxLines: maxLines ?? 1,
         onFieldSubmitted: onFieldSubmitted,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: textPrimary,
+          letterSpacing: 0.1,
+        ),
         decoration: InputDecoration(
           labelText: label,
           filled: true,
-          fillColor: const Color(0xFFEFEFEF),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+          fillColor: surfaceTertiary,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: navy, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: error),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: error, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          labelStyle: const TextStyle(
+            color: textSecondary,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.1,
+          ),
+          hintStyle: const TextStyle(
+            color: textTertiary,
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            letterSpacing: 0.1,
+          ),
         ),
       ),
     );

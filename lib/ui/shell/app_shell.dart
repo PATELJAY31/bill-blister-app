@@ -98,107 +98,166 @@ class _AppShellState extends State<AppShell> {
 
   PreferredSizeWidget _buildCustomNavyAppBar(BuildContext context) {
     return PreferredSize(
-      preferredSize: const Size.fromHeight(72),
+      preferredSize: const Size.fromHeight(80),
       child: Container(
-        height: 72,
-        decoration: const BoxDecoration(
-          color: navy,
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(12),
-            bottomRight: Radius.circular(12),
+        height: 80,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              navy,
+              navyLight,
+            ],
+          ),
+          borderRadius: const BorderRadius.only(
+            bottomLeft: Radius.circular(20),
+            bottomRight: Radius.circular(20),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black26,
-              blurRadius: 12,
-              offset: Offset(0, 3),
+              color: navy.withOpacity(0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         child: SafeArea(
-          child: Row(
-            children: [
-              // Leftmost: hamburger menu
-              Builder(builder: (inner) {
-                return IconButton(
-                  onPressed: () {
-                    Scaffold.of(inner).openDrawer();
-                  },
-                  icon: const Icon(
-                    Icons.menu_rounded,
-                    color: onNavy,
-                    size: 24,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              children: [
+                // Leftmost: hamburger menu
+                Builder(builder: (inner) {
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        Scaffold.of(inner).openDrawer();
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.menu_rounded,
+                          color: onNavy,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+
+                const SizedBox(width: 4),
+
+                // Back arrow next to hamburger
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _handleBackButtonTap,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: onNavy,
+                        size: 24,
+                      ),
+                    ),
                   ),
-                );
-              }),
-
-              // Back arrow next to hamburger
-              IconButton(
-                onPressed: _handleBackButtonTap,
-                icon: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: onNavy,
-                  size: 24,
                 ),
-              ),
 
-              // Centered title
-              Expanded(
-                child: Text(
-                  '${widget.title} | $companyName',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: onNavy,
+                const SizedBox(width: 8),
+
+                // Centered title
+                Expanded(
+                  child: Text(
+                    '${widget.title} | $companyName',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: onNavy,
+                      letterSpacing: 0.3,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ),
 
-              // Right actions: optional actions (no hamburger here)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (widget.showBell)
-                    IconButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/notifications');
-                      },
-                      icon: const Icon(
-                        Icons.notifications_none_rounded,
-                        color: onNavy,
-                        size: 24,
+                const SizedBox(width: 8),
+
+                // Right actions: optional actions (no hamburger here)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.showBell)
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/notifications');
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(
+                              Icons.notifications_none_rounded,
+                              color: onNavy,
+                              size: 24,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  if (widget.showPlus)
-                    IconButton(
-                      onPressed: () {
-                        if (widget.onPlusPressed != null) {
-                          widget.onPlusPressed!.call();
-                        } else {
-                          Navigator.pushNamed(context, '/add-allocation');
-                        }
-                      },
-                      icon: const Icon(
-                        Icons.add_rounded,
-                        color: onNavy,
-                        size: 24,
+                    if (widget.showPlus)
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            if (widget.onPlusPressed != null) {
+                              widget.onPlusPressed!.call();
+                            } else {
+                              Navigator.pushNamed(context, '/add-allocation');
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(
+                              Icons.add_rounded,
+                              color: onNavy,
+                              size: 24,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  if (widget.showFilter)
-                    IconButton(
-                      onPressed: () {
-                        _showFilterBottomSheet(context);
-                      },
-                      icon: const Icon(
-                        Icons.tune_rounded,
-                        color: onNavy,
-                        size: 24,
+                    if (widget.showFilter)
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            _showFilterBottomSheet(context);
+                          },
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            child: const Icon(
+                              Icons.tune_rounded,
+                              color: onNavy,
+                              size: 24,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
