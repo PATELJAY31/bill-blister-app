@@ -80,14 +80,14 @@ const AmountAllocationPage: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-sm font-medium text-text-secondary mb-1">Total Cash Issued</p>
-                    <p className="text-3xl font-bold text-navy">₹{totalCashIssued.toFixed(2)}</p>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Total Cash Issued</p>
+                    <p className="text-3xl font-bold text-gray-900">₹{totalCashIssued.toFixed(2)}</p>
                   </div>
-                  <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
-                    <CurrencyDollarIcon className="w-6 h-6 text-success" />
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <CurrencyDollarIcon className="w-6 h-6 text-green-600" />
                   </div>
                 </div>
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-gray-600">
                   Across {allocations.length} allocation{allocations.length !== 1 ? 's' : ''}
                 </p>
               </CardContent>
@@ -99,14 +99,14 @@ const AmountAllocationPage: React.FC = () => {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-sm font-medium text-text-secondary mb-1">Active Allocations</p>
-                    <p className="text-3xl font-bold text-navy">{filteredAllocations.length}</p>
+                    <p className="text-sm font-medium text-gray-600 mb-1">Active Allocations</p>
+                    <p className="text-3xl font-bold text-gray-900">{filteredAllocations.length}</p>
                   </div>
-                  <div className="w-12 h-12 bg-info/10 rounded-lg flex items-center justify-center">
-                    <DocumentTextIcon className="w-6 h-6 text-info" />
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <DocumentTextIcon className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-gray-600">
                   Currently showing
                 </p>
               </CardContent>
@@ -126,7 +126,7 @@ const AmountAllocationPage: React.FC = () => {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-primary">Employee Name</label>
+                  <label className="text-sm font-medium text-gray-900">Employee Name</label>
                   <Input
                     placeholder="Search by employee name..."
                     value={filters.employeeName}
@@ -134,9 +134,9 @@ const AmountAllocationPage: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-text-primary">Expense Type</label>
+                  <label className="text-sm font-medium text-gray-900">Expense Type</label>
                   <select
-                    className="flex h-10 w-full rounded-lg border border-gray-200 bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-navy focus:ring-offset-2"
+                    className="flex h-10 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     value={filters.expenseType}
                     onChange={(e) => setFilters({ ...filters, expenseType: e.target.value })}
                   >
@@ -180,7 +180,7 @@ const AmountAllocationPage: React.FC = () => {
                       delay={index}
                     />
                     <div className="px-6 pb-4">
-                      <div className="flex items-center justify-between text-sm text-text-secondary">
+                      <div className="flex items-center justify-between text-sm text-gray-600">
                         <div className="flex items-center gap-4">
                           <span className="flex items-center gap-1">
                             <DocumentTextIcon className="w-4 h-4" />

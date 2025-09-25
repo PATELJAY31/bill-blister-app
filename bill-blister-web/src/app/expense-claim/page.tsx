@@ -2,9 +2,12 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import Layout from '@/components/layout/Layout';
 import StatusChip from '@/components/ui/StatusChip';
 import EmptyState from '@/components/ui/EmptyState';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { mockClaims } from '@/data/mockData';
 import { Claim } from '@/types';
 import { DocumentTextIcon, PlusIcon, EyeIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
@@ -19,6 +22,29 @@ const ExpenseClaimPage: React.FC = () => {
 
   const getStatusCount = (status: 'pending' | 'approved' | 'rejected') => {
     return claims.filter(claim => claim.engineerStatus === status).length;
+  };
+
+  const containerVariants = {
+    initial: { opacity: 0 },
+    animate: { 
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.1
+      }
+    }
+  };
+
+  const cardVariants = {
+    initial: { opacity: 0, y: 20 },
+    animate: { 
+      opacity: 1, 
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: [0.4, 0, 0.2, 1]
+      }
+    }
   };
 
   if (claims.length === 0) {
@@ -36,141 +62,184 @@ const ExpenseClaimPage: React.FC = () => {
 
   return (
     <Layout title="Expense Claims">
-      <div className="space-y-6">
+      <motion.div 
+        className="space-y-6"
+        variants={containerVariants}
+        initial="initial"
+        animate="animate"
+      >
         {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="stat-label">Total Claims</p>
-                <p className="stat-value">{claims.length}</p>
-              </div>
-              <DocumentTextIcon className="w-8 h-8 text-info" />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div variants={cardVariants}>
+            <Card className="hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-text-secondary mb-1">Total Claims</p>
+                    <p className="text-3xl font-bold text-navy">{claims.length}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-info/10 rounded-lg flex items-center justify-center">
+                    <DocumentTextIcon className="w-6 h-6 text-info" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
           
-          <div className="stat-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="stat-label">Pending</p>
-                <p className="stat-value text-warning">{getStatusCount('pending')}</p>
-              </div>
-              <StatusChip status="pending" />
-            </div>
-          </div>
+          <motion.div variants={cardVariants}>
+            <Card className="hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-text-secondary mb-1">Pending</p>
+                    <p className="text-3xl font-bold text-warning">{getStatusCount('pending')}</p>
+                  </div>
+                  <StatusChip status="pending" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
           
-          <div className="stat-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="stat-label">Approved</p>
-                <p className="stat-value text-success">{getStatusCount('approved')}</p>
-              </div>
-              <StatusChip status="approved" />
-            </div>
-          </div>
+          <motion.div variants={cardVariants}>
+            <Card className="hover:shadow-lg transition-shadow duration-300">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-text-secondary mb-1">Approved</p>
+                    <p className="text-3xl font-bold text-success">{getStatusCount('approved')}</p>
+                  </div>
+                  <StatusChip status="approved" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="card">
-          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-            {[
-              { key: 'all', label: 'All Claims', count: claims.length },
-              { key: 'pending', label: 'Pending', count: getStatusCount('pending') },
-              { key: 'approved', label: 'Approved', count: getStatusCount('approved') },
-              { key: 'rejected', label: 'Rejected', count: getStatusCount('rejected') },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setFilter(tab.key as any)}
-                className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  filter === tab.key
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                {tab.label} ({tab.count})
-              </button>
-            ))}
-          </div>
-        </div>
+        <motion.div variants={cardVariants}>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                {[
+                  { key: 'all', label: 'All Claims', count: claims.length },
+                  { key: 'pending', label: 'Pending', count: getStatusCount('pending') },
+                  { key: 'approved', label: 'Approved', count: getStatusCount('approved') },
+                  { key: 'rejected', label: 'Rejected', count: getStatusCount('rejected') },
+                ].map((tab) => (
+                  <motion.button
+                    key={tab.key}
+                    onClick={() => setFilter(tab.key as any)}
+                    className={`flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      filter === tab.key
+                        ? 'bg-surface text-text-primary shadow-sm'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {tab.label} ({tab.count})
+                  </motion.button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Claims List */}
         <div className="space-y-4">
           {filteredClaims.length === 0 ? (
-            <div className="card">
-              <EmptyState
-                title="No Claims Found"
-                description={`No ${filter === 'all' ? '' : filter} claims found.`}
-                actionText="Create New Claim"
-                onAction={() => window.location.href = '/expense-claim/new'}
-              />
-            </div>
+            <motion.div variants={cardVariants}>
+              <Card>
+                <EmptyState
+                  title="No Claims Found"
+                  description={`No ${filter === 'all' ? '' : filter} claims found.`}
+                  actionText="Create New Claim"
+                  onAction={() => window.location.href = '/expense-claim/new'}
+                />
+              </Card>
+            </motion.div>
           ) : (
-            filteredClaims.map((claim) => (
-              <div key={claim.id} className="card card-hover">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-title text-gray-900">
-                        {claim.employeeName}
-                      </h3>
-                      <StatusChip status={claim.engineerStatus} />
+            filteredClaims.map((claim, index) => (
+              <motion.div
+                key={claim.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <h3 className="text-lg font-semibold text-text-primary">
+                            {claim.employeeName}
+                          </h3>
+                          <StatusChip status={claim.engineerStatus} />
+                        </div>
+                        
+                        <p className="text-text-secondary mb-4 font-medium">{claim.expenseType}</p>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="text-text-secondary text-xs">Amount:</span>
+                            <p className="font-semibold text-text-primary">₹{claim.billAmount.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <span className="text-text-secondary text-xs">Bill Date:</span>
+                            <p className="font-semibold text-text-primary">{claim.billDate}</p>
+                          </div>
+                          <div>
+                            <span className="text-text-secondary text-xs">LPO Number:</span>
+                            <p className="font-semibold text-text-primary">{claim.lpoNumber || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <span className="text-text-secondary text-xs">Submitted:</span>
+                            <p className="font-semibold text-text-primary">{claim.submittedDate}</p>
+                          </div>
+                        </div>
+                        
+                        {claim.notes && (
+                          <p className="text-text-secondary text-sm mt-3 italic bg-gray-50 p-3 rounded-lg">
+                            "{claim.notes}"
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="icon"
+                          title="View Details"
+                        >
+                          <Link href={`/expense-claim/${claim.id}`}>
+                            <EyeIcon className="w-5 h-5" />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
-                    
-                    <p className="text-body text-gray-600 mb-4">{claim.expenseType}</p>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <span className="text-caption text-gray-500">Amount:</span>
-                        <p className="font-medium text-gray-900">₹{claim.billAmount.toFixed(2)}</p>
-                      </div>
-                      <div>
-                        <span className="text-caption text-gray-500">Bill Date:</span>
-                        <p className="font-medium text-gray-900">{claim.billDate}</p>
-                      </div>
-                      <div>
-                        <span className="text-caption text-gray-500">LPO Number:</span>
-                        <p className="font-medium text-gray-900">{claim.lpoNumber || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-caption text-gray-500">Submitted:</span>
-                        <p className="font-medium text-gray-900">{claim.submittedDate}</p>
-                      </div>
-                    </div>
-                    
-                    {claim.notes && (
-                      <p className="text-caption text-gray-500 mt-3 italic">
-                        "{claim.notes}"
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2 ml-4">
-                    <Link
-                      href={`/expense-claim/${claim.id}`}
-                      className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="View Details"
-                    >
-                      <EyeIcon className="w-5 h-5" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))
           )}
         </div>
 
         {/* Add New Claim Button */}
-        <div className="text-center">
-          <Link
-            href="/expense-claim/new"
-            className="btn btn-primary"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Create New Claim
-          </Link>
-        </div>
-      </div>
+        <motion.div 
+          className="text-center"
+          variants={cardVariants}
+        >
+          <Button asChild size="lg" className="gap-2">
+            <Link href="/expense-claim/new">
+              <PlusIcon className="w-5 h-5" />
+              Create New Claim
+            </Link>
+          </Button>
+        </motion.div>
+      </motion.div>
     </Layout>
   );
 };
