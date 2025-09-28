@@ -1,0 +1,100 @@
+
+BILL BLISTER WEB APP - PAGE FUNCTIONS
+=====================================
+
+1. LOGIN / SIGNUP PAGE
+----------------------
+- User login with email and password.
+- Role-based access: Admin, Employee, Engineer, HO Approver.
+- Signup for new users (Admin controlled).
+- Password reset option.
+- Authentication handled with JWT.
+
+2. DASHBOARD PAGE
+-----------------
+- Display summary cards (Total Claims, Pending, Approved, Rejected).
+- Graphs/charts for expense trends and allocations.
+- Recent activity feed (latest claims, approvals, rejections).
+- Quick links to important actions (Add Claim, Allocate Amount, Approve Claims).
+
+3. AMOUNT ALLOCATION PAGE
+-------------------------
+- View all allocations in list/grid format.
+- Create new allocation (date, employee, expense type, amount).
+- Edit/delete existing allocations.
+- Filter by employee, expense type, date.
+- Show total allocated amounts dynamically.
+
+4. EXPENSE CLAIM PAGE
+---------------------
+- Create new claim with fields:
+  * Expense type
+  * LPO number
+  * Bill number
+  * Bill date
+  * Bill amount
+  * Notes
+  * Attach receipts (image/PDF)
+- Validate inputs in real time.
+- Preview uploaded receipts before submission.
+- View existing claims with status indicators.
+
+5. CLAIM VERIFICATION PAGE (Engineer Role)
+------------------------------------------
+- View pending claims requiring verification.
+- Preview receipts in zoomable modal.
+- Approve or reject claims with notes.
+- Status update visible to employees.
+- Track verification history.
+
+6. CLAIM APPROVAL PAGE (HO Role)
+--------------------------------
+- View claims already verified by engineer.
+- Approve or reject with reason.
+- Show status with color-coded indicators.
+- Maintain approval history for transparency.
+
+7. EXPENSE TYPE & HEAD MANAGEMENT PAGE
+--------------------------------------
+- CRUD operations for expense types.
+- Assign “Head 1” and “Head 2” categories.
+- Toggle active/inactive status of expense types.
+- Ensure dependencies are reflected in claims/allocations.
+
+8. EMPLOYEE MANAGEMENT PAGE
+---------------------------
+- Add new employees with personal + role info.
+- Edit/update employee details.
+- Assign reporting manager.
+- Activate/deactivate employees.
+- View employee’s allocation and claims history.
+
+9. REPORTS & ANALYTICS PAGE
+---------------------------
+- Filter by date range, employee, expense type, status.
+- Generate summary of claims and allocations.
+- Export reports in PDF/Excel format.
+- Graphical analytics (bar chart, pie chart for claims breakdown).
+
+10. NOTIFICATIONS PAGE
+----------------------
+- Show all system notifications (claim status changes, allocations).
+- Mark notifications as read/unread.
+- Clear all notifications option.
+- Badge icon on header for new alerts.
+
+11. SETTINGS PAGE (Optional / Admin)
+------------------------------------
+- Manage system configuration (company details, theme).
+- User role management.
+- Integration settings (future use).
+
+12. PROFILE PAGE
+----------------
+- Display logged-in user’s details.
+- Update password or contact info.
+- View own claims and allocation history.
+
+=====================================
+This document outlines the functions of each page in the Bill Blister web app. 
+It serves as a functional specification for frontend + backend integration.

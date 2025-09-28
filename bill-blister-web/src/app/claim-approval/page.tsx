@@ -11,7 +11,7 @@ const ClaimApprovalPage: React.FC = () => {
       <EmptyState
         title="No Claims for Approval"
         description="There are currently no claims waiting for HO level approval. This feature will be implemented in the next phase."
-        icon={<CheckCircleIcon className="w-12 h-12 text-status-info" />}
+        icon={<CheckCircleIcon className="w-12 h-12 text-blue-600" />}
         actionText="View Verified Claims"
         onAction={() => window.location.href = '/claim-verification'}
         secondaryActionText="View All Claims"

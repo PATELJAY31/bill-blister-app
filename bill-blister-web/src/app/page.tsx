@@ -1,16 +1,16 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 
 export default function Home() {
-  const router = useRouter();
+  const router = useRouter()
 
   useEffect(() => {
-    // Redirect to amount allocation page as the default route
-    router.push('/amount-allocation');
-  }, [router]);
+    // Redirect to dashboard as the default route
+    router.push('/dashboard')
+  }, [router])
 
   return (
     <div className="min-h-screen bg-surface-secondary flex items-center justify-center">
@@ -35,5 +35,5 @@ export default function Home() {
         </motion.p>
       </motion.div>
     </div>
-  );
+  )
 }

@@ -1,54 +1,96 @@
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "@/lib/utils"
+import React from 'react'
+import { motion } from 'framer-motion'
+import { cn } from '@/lib/utils'
 
-const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-  {
-    variants: {
-      variant: {
-        default: "bg-navy text-white shadow hover:bg-navy-dark",
-        destructive: "bg-error text-white shadow-sm hover:bg-error/90",
-        outline: "border border-gray-200 bg-surface text-text-primary shadow-sm hover:bg-gray-50 hover:text-text-primary",
-        secondary: "bg-gray-100 text-text-primary shadow-sm hover:bg-gray-200",
-        ghost: "hover:bg-gray-100 hover:text-text-primary",
-        link: "text-navy underline-offset-4 hover:underline",
-        success: "bg-success text-white shadow hover:bg-success/90",
-        warning: "bg-warning text-white shadow hover:bg-warning/90",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
-
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'ghost'
+  size?: 'sm' | 'md' | 'lg'
+  loading?: boolean
+  icon?: React.ReactNode
+  iconPosition?: 'left' | 'right'
+  fullWidth?: boolean
+  animated?: boolean
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
+  (
+    {
+      className,
+      variant = 'primary',
+      size = 'md',
+      loading = false,
+      icon,
+      iconPosition = 'left',
+      fullWidth = false,
+      animated = true,
+      children,
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    const baseClasses = cn(
+      'btn',
+      {
+        'btn-primary': variant === 'primary',
+        'btn-secondary': variant === 'secondary',
+        'btn-success': variant === 'success',
+        'btn-warning': variant === 'warning',
+        'btn-error': variant === 'error',
+        'bg-transparent hover:bg-surface-tertiary text-text-primary': variant === 'ghost',
+        'btn-sm': size === 'sm',
+        'btn-md': size === 'md',
+        'btn-lg': size === 'lg',
+        'w-full': fullWidth,
+        'opacity-50 cursor-not-allowed': disabled || loading,
+      },
+      className
+    )
+
+    const content = (
+      <>
+        {loading && (
+          <div className="loading-spinner w-4 h-4 mr-2" />
+        )}
+        {!loading && icon && iconPosition === 'left' && (
+          <span className="mr-2">{icon}</span>
+        )}
+        {children}
+        {!loading && icon && iconPosition === 'right' && (
+          <span className="ml-2">{icon}</span>
+        )}
+      </>
+    )
+
+    if (!animated) {
+      return (
+        <button
+          ref={ref}
+          className={baseClasses}
+          disabled={disabled || loading}
+          {...props}
+        >
+          {content}
+        </button>
+      )
+    }
+
     return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+      <motion.button
         ref={ref}
+        className={baseClasses}
+        disabled={disabled || loading}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 400, damping: 17 }}
         {...props}
-      />
+      >
+        {content}
+      </motion.button>
     )
   }
 )
-Button.displayName = "Button"
 
-export { Button, buttonVariants }
+Button.displayName = 'Button'
+
+export default Button
