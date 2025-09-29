@@ -1,47 +1,59 @@
+const bcrypt = require('bcryptjs');
 const { prisma } = require('../config/database');
-const { hashPassword } = require('../utils/password');
-const { successResponse, errorResponse, paginatedResponse } = require('../utils/response');
-const { catchAsync } = require('../middlewares/errorHandler');
-const { paginate } = require('../utils/response');
+const { asyncHandler } = require('../middlewares/errorHandler');
 
 // Get all employees with pagination and filtering
-const getEmployees = catchAsync(async (req, res) => {
+const getEmployees = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
     search,
     role,
     status,
-    sortBy = 'createdAt',
-    sortOrder = 'desc',
+    head1,
+    head2
   } = req.query;
 
-  const pagination = paginate(parseInt(page), parseInt(limit));
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const take = parseInt(limit);
 
   // Build where clause
   const where = {};
-  
+
   if (search) {
     where.OR = [
       { firstName: { contains: search, mode: 'insensitive' } },
       { lastName: { contains: search, mode: 'insensitive' } },
       { email: { contains: search, mode: 'insensitive' } },
-      { loginName: { contains: search, mode: 'insensitive' } },
+      { loginName: { contains: search, mode: 'insensitive' } }
     ];
   }
-  
+
   if (role) {
     where.role = role;
   }
-  
+
   if (status) {
     where.status = status;
+  }
+
+  if (head1) {
+    where.head1 = head1;
+  }
+
+  if (head2) {
+    where.head2 = head2;
   }
 
   // Get employees with pagination
   const [employees, total] = await Promise.all([
     prisma.employee.findMany({
       where,
+      skip,
+      take,
+      orderBy: { [sortBy]: sortOrder },
       select: {
         id: true,
         firstName: true,
@@ -50,42 +62,55 @@ const getEmployees = catchAsync(async (req, res) => {
         phone: true,
         role: true,
         status: true,
-        dob: true,
+        loginName: true,
+        head1: true,
+        head2: true,
         joiningDate: true,
+        leavingDate: true,
         country: true,
         state: true,
         city: true,
+        createdAt: true,
+        updatedAt: true,
         reportingManager: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
-          },
+            email: true
+          }
         },
         subordinates: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
-            role: true,
-          },
-        },
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { [sortBy]: sortOrder },
-      ...pagination,
+            email: true
+          }
+        }
+      }
     }),
-    prisma.employee.count({ where }),
+    prisma.employee.count({ where })
   ]);
 
-  return paginatedResponse(res, { results: employees, total }, pagination, 'Employees retrieved successfully');
+  const totalPages = Math.ceil(total / parseInt(limit));
+
+  res.json({
+    success: true,
+    data: employees,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages,
+      totalItems: total,
+      itemsPerPage: parseInt(limit),
+      hasNextPage: parseInt(page) < totalPages,
+      hasPrevPage: parseInt(page) > 1
+    }
+  });
 });
 
 // Get employee by ID
-const getEmployeeById = catchAsync(async (req, res) => {
+const getEmployeeById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const employee = await prisma.employee.findUnique({
@@ -98,7 +123,9 @@ const getEmployeeById = catchAsync(async (req, res) => {
       phone: true,
       role: true,
       status: true,
-      dob: true,
+      loginName: true,
+      head1: true,
+      head2: true,
       joiningDate: true,
       leavingDate: true,
       country: true,
@@ -106,16 +133,15 @@ const getEmployeeById = catchAsync(async (req, res) => {
       city: true,
       fullAddress1: true,
       fullAddress2: true,
-      head1: true,
-      head2: true,
+      createdAt: true,
+      updatedAt: true,
       reportingManager: {
         select: {
           id: true,
           firstName: true,
           lastName: true,
-          email: true,
-          role: true,
-        },
+          email: true
+        }
       },
       subordinates: {
         select: {
@@ -123,59 +149,86 @@ const getEmployeeById = catchAsync(async (req, res) => {
           firstName: true,
           lastName: true,
           email: true,
-          role: true,
-          status: true,
-        },
+          role: true
+        }
       },
-      createdAt: true,
-      updatedAt: true,
-    },
+      allocations: {
+        select: {
+          id: true,
+          allocationDate: true,
+          amount: true,
+          statusEng: true,
+          statusHo: true,
+          expenseType: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy: {
+          allocationDate: 'desc'
+        },
+        take: 5
+      }
+    }
   });
 
   if (!employee) {
-    return errorResponse(res, 404, 'Employee not found');
+    return res.status(404).json({
+      success: false,
+      error: 'Employee not found'
+    });
   }
 
-  return successResponse(res, 200, 'Employee retrieved successfully', { employee });
+  res.json({
+    success: true,
+    data: employee
+  });
 });
 
 // Create new employee
-const createEmployee = catchAsync(async (req, res) => {
+const createEmployee = asyncHandler(async (req, res) => {
   const {
     firstName,
     lastName,
     email,
-    password,
-    role,
     phone,
+    role = 'EMPLOYEE',
     reportingManagerId,
-    dob,
+    loginName,
+    password,
+    head1,
+    head2,
     joiningDate,
     country,
     state,
     city,
     fullAddress1,
-    fullAddress2,
-    head1,
-    head2,
+    fullAddress2
   } = req.body;
 
-  // Check if employee already exists
-  const existingEmployee = await prisma.employee.findFirst({
+  // Check if user already exists
+  const existingUser = await prisma.employee.findFirst({
     where: {
       OR: [
         { email },
-        { loginName: email },
-      ],
-    },
+        { loginName }
+      ]
+    }
   });
 
-  if (existingEmployee) {
-    return errorResponse(res, 409, 'Employee with this email already exists');
+  if (existingUser) {
+    return res.status(400).json({
+      success: false,
+      error: 'User already exists',
+      message: existingUser.email === email ? 'Email already registered' : 'Login name already taken'
+    });
   }
 
   // Hash password
-  const passwordHash = await hashPassword(password);
+  const saltRounds = 12;
+  const passwordHash = await bcrypt.hash(password, saltRounds);
 
   // Create employee
   const employee = await prisma.employee.create({
@@ -183,20 +236,19 @@ const createEmployee = catchAsync(async (req, res) => {
       firstName,
       lastName,
       email,
-      passwordHash,
-      loginName: email,
-      role,
       phone,
+      role,
       reportingManagerId: reportingManagerId ? parseInt(reportingManagerId) : null,
-      dob: dob ? new Date(dob) : null,
+      loginName,
+      passwordHash,
+      head1,
+      head2,
       joiningDate: joiningDate ? new Date(joiningDate) : null,
       country,
       state,
       city,
       fullAddress1,
-      fullAddress2,
-      head1,
-      head2,
+      fullAddress2
     },
     select: {
       id: true,
@@ -206,41 +258,46 @@ const createEmployee = catchAsync(async (req, res) => {
       phone: true,
       role: true,
       status: true,
-      dob: true,
+      loginName: true,
+      head1: true,
+      head2: true,
       joiningDate: true,
       country: true,
       state: true,
       city: true,
       fullAddress1: true,
       fullAddress2: true,
-      head1: true,
-      head2: true,
+      createdAt: true,
       reportingManager: {
         select: {
           id: true,
           firstName: true,
           lastName: true,
-          email: true,
-        },
-      },
-      createdAt: true,
-    },
+          email: true
+        }
+      }
+    }
   });
 
-  return successResponse(res, 201, 'Employee created successfully', { employee });
+  res.status(201).json({
+    success: true,
+    message: 'Employee created successfully',
+    data: employee
+  });
 });
 
 // Update employee
-const updateEmployee = catchAsync(async (req, res) => {
+const updateEmployee = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const {
     firstName,
     lastName,
     email,
-    role,
     phone,
+    role,
     reportingManagerId,
-    dob,
+    head1,
+    head2,
     joiningDate,
     leavingDate,
     country,
@@ -248,34 +305,43 @@ const updateEmployee = catchAsync(async (req, res) => {
     city,
     fullAddress1,
     fullAddress2,
-    head1,
-    head2,
-    status,
+    status
   } = req.body;
 
   // Check if employee exists
   const existingEmployee = await prisma.employee.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: parseInt(id) }
   });
 
   if (!existingEmployee) {
-    return errorResponse(res, 404, 'Employee not found');
+    return res.status(404).json({
+      success: false,
+      error: 'Employee not found'
+    });
   }
 
-  // Check if email is being changed and if it's already taken
-  if (email && email !== existingEmployee.email) {
-    const emailExists = await prisma.employee.findFirst({
+  // Check for email/login name conflicts (excluding current employee)
+  if (email || req.body.loginName) {
+    const conflictUser = await prisma.employee.findFirst({
       where: {
-        OR: [
-          { email },
-          { loginName: email },
-        ],
-        NOT: { id: parseInt(id) },
-      },
+        AND: [
+          { id: { not: parseInt(id) } },
+          {
+            OR: [
+              ...(email ? [{ email }] : []),
+              ...(req.body.loginName ? [{ loginName: req.body.loginName }] : [])
+            ]
+          }
+        ]
+      }
     });
 
-    if (emailExists) {
-      return errorResponse(res, 409, 'Email is already taken by another employee');
+    if (conflictUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'Conflict detected',
+        message: conflictUser.email === email ? 'Email already registered' : 'Login name already taken'
+      });
     }
   }
 
@@ -285,26 +351,22 @@ const updateEmployee = catchAsync(async (req, res) => {
     data: {
       ...(firstName && { firstName }),
       ...(lastName && { lastName }),
-      ...(email && { 
-        email,
-        loginName: email, // Update login name to match email
-      }),
-      ...(role && { role }),
+      ...(email && { email }),
       ...(phone !== undefined && { phone }),
+      ...(role && { role }),
       ...(reportingManagerId !== undefined && { 
         reportingManagerId: reportingManagerId ? parseInt(reportingManagerId) : null 
       }),
-      ...(dob !== undefined && { dob: dob ? new Date(dob) : null }),
-      ...(joiningDate !== undefined && { joiningDate: joiningDate ? new Date(joiningDate) : null }),
-      ...(leavingDate !== undefined && { leavingDate: leavingDate ? new Date(leavingDate) : null }),
-      ...(country !== undefined && { country }),
-      ...(state !== undefined && { state }),
-      ...(city !== undefined && { city }),
-      ...(fullAddress1 !== undefined && { fullAddress1 }),
-      ...(fullAddress2 !== undefined && { fullAddress2 }),
       ...(head1 !== undefined && { head1 }),
       ...(head2 !== undefined && { head2 }),
-      ...(status && { status }),
+      ...(joiningDate && { joiningDate: new Date(joiningDate) }),
+      ...(leavingDate && { leavingDate: new Date(leavingDate) }),
+      ...(country && { country }),
+      ...(state && { state }),
+      ...(city && { city }),
+      ...(fullAddress1 && { fullAddress1 }),
+      ...(fullAddress2 && { fullAddress2 }),
+      ...(status && { status })
     },
     select: {
       id: true,
@@ -314,7 +376,9 @@ const updateEmployee = catchAsync(async (req, res) => {
       phone: true,
       role: true,
       status: true,
-      dob: true,
+      loginName: true,
+      head1: true,
+      head2: true,
       joiningDate: true,
       leavingDate: true,
       country: true,
@@ -322,76 +386,113 @@ const updateEmployee = catchAsync(async (req, res) => {
       city: true,
       fullAddress1: true,
       fullAddress2: true,
-      head1: true,
-      head2: true,
+      updatedAt: true,
       reportingManager: {
         select: {
           id: true,
           firstName: true,
           lastName: true,
-          email: true,
-        },
-      },
-      updatedAt: true,
-    },
+          email: true
+        }
+      }
+    }
   });
 
-  return successResponse(res, 200, 'Employee updated successfully', { employee });
+  res.json({
+    success: true,
+    message: 'Employee updated successfully',
+    data: employee
+  });
 });
 
-// Delete employee (soft delete by setting status to INACTIVE)
-const deleteEmployee = catchAsync(async (req, res) => {
+// Delete employee
+const deleteEmployee = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Check if employee exists
   const employee = await prisma.employee.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: parseInt(id) }
   });
 
   if (!employee) {
-    return errorResponse(res, 404, 'Employee not found');
+    return res.status(404).json({
+      success: false,
+      error: 'Employee not found'
+    });
   }
 
-  // Soft delete by setting status to INACTIVE
-  await prisma.employee.update({
-    where: { id: parseInt(id) },
-    data: { 
-      status: 'INACTIVE',
-      leavingDate: new Date(),
-    },
+  // Check if employee has subordinates
+  const subordinates = await prisma.employee.findMany({
+    where: { reportingManagerId: parseInt(id) }
   });
 
-  return successResponse(res, 200, 'Employee deactivated successfully');
+  if (subordinates.length > 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Cannot delete employee',
+      message: 'Employee has subordinates. Please reassign them first.'
+    });
+  }
+
+  // Delete employee
+  await prisma.employee.delete({
+    where: { id: parseInt(id) }
+  });
+
+  res.json({
+    success: true,
+    message: 'Employee deleted successfully'
+  });
 });
 
 // Get employee statistics
-const getEmployeeStats = catchAsync(async (req, res) => {
+const getEmployeeStats = asyncHandler(async (req, res) => {
   const [
     totalEmployees,
     activeEmployees,
     inactiveEmployees,
     employeesByRole,
+    recentHires
   ] = await Promise.all([
     prisma.employee.count(),
-    prisma.employee.count({ where: { status: 'ACTIVE' } }),
-    prisma.employee.count({ where: { status: 'INACTIVE' } }),
+    prisma.employee.count({ where: { status: 'active' } }),
+    prisma.employee.count({ where: { status: 'inactive' } }),
     prisma.employee.groupBy({
       by: ['role'],
-      _count: { role: true },
+      _count: { role: true }
     }),
+    prisma.employee.findMany({
+      where: {
+        joiningDate: {
+          gte: new Date(new Date().setMonth(new Date().getMonth() - 6))
+        }
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        joiningDate: true
+      },
+      orderBy: { joiningDate: 'desc' },
+      take: 5
+    })
   ]);
 
-  const stats = {
-    total: totalEmployees,
-    active: activeEmployees,
-    inactive: inactiveEmployees,
-    byRole: employeesByRole.reduce((acc, item) => {
-      acc[item.role] = item._count.role;
-      return acc;
-    }, {}),
-  };
-
-  return successResponse(res, 200, 'Employee statistics retrieved successfully', { stats });
+  res.json({
+    success: true,
+    data: {
+      totalEmployees,
+      activeEmployees,
+      inactiveEmployees,
+      employeesByRole: employeesByRole.map(item => ({
+        role: item.role,
+        count: item._count.role
+      })),
+      recentHires
+    }
+  });
 });
 
 module.exports = {
@@ -400,5 +501,5 @@ module.exports = {
   createEmployee,
   updateEmployee,
   deleteEmployee,
-  getEmployeeStats,
+  getEmployeeStats
 };

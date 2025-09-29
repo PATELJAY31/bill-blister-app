@@ -1,19 +1,35 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const { prisma } = require('../config/database');
-const { hashPassword, comparePassword } = require('../utils/password');
-const { generateTokenPair } = require('../utils/jwt');
-const { successResponse, errorResponse, badRequestResponse } = require('../utils/response');
-const { catchAsync } = require('../middlewares/errorHandler');
+const { asyncHandler } = require('../middlewares/errorHandler');
+
+// Generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign(
+    { userId },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  );
+};
 
 // Register new user
-const signup = catchAsync(async (req, res) => {
+const register = asyncHandler(async (req, res) => {
   const {
     firstName,
     lastName,
     email,
-    password,
-    role = 'EMPLOYEE',
     phone,
-    reportingManagerId,
+    role = 'EMPLOYEE',
+    loginName,
+    password,
+    head1,
+    head2,
+    joiningDate,
+    country,
+    state,
+    city,
+    fullAddress1,
+    fullAddress2
   } = req.body;
 
   // Check if user already exists
@@ -21,17 +37,22 @@ const signup = catchAsync(async (req, res) => {
     where: {
       OR: [
         { email },
-        { loginName: email },
-      ],
-    },
+        { loginName }
+      ]
+    }
   });
 
   if (existingUser) {
-    return badRequestResponse(res, 'User with this email already exists');
+    return res.status(400).json({
+      success: false,
+      error: 'User already exists',
+      message: existingUser.email === email ? 'Email already registered' : 'Login name already taken'
+    });
   }
 
   // Hash password
-  const passwordHash = await hashPassword(password);
+  const saltRounds = 12;
+  const passwordHash = await bcrypt.hash(password, saltRounds);
 
   // Create user
   const user = await prisma.employee.create({
@@ -39,35 +60,53 @@ const signup = catchAsync(async (req, res) => {
       firstName,
       lastName,
       email,
-      passwordHash,
-      loginName: email,
-      role,
       phone,
-      reportingManagerId: reportingManagerId ? parseInt(reportingManagerId) : null,
+      role,
+      loginName,
+      passwordHash,
+      head1,
+      head2,
+      joiningDate: joiningDate ? new Date(joiningDate) : null,
+      country,
+      state,
+      city,
+      fullAddress1,
+      fullAddress2
     },
     select: {
       id: true,
       firstName: true,
       lastName: true,
       email: true,
-      role: true,
       phone: true,
+      role: true,
       status: true,
-      createdAt: true,
-    },
+      loginName: true,
+      head1: true,
+      head2: true,
+      joiningDate: true,
+      country: true,
+      state: true,
+      city: true,
+      fullAddress1: true,
+      fullAddress2: true,
+      createdAt: true
+    }
   });
 
-  // Generate tokens
-  const tokens = generateTokenPair(user);
+  // Generate token
+  const token = generateToken(user.id);
 
-  return successResponse(res, 201, 'User registered successfully', {
-    user,
-    ...tokens,
+  res.status(201).json({
+    success: true,
+    message: 'User registered successfully',
+    token,
+    user
   });
 });
 
 // Login user
-const login = catchAsync(async (req, res) => {
+const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   // Find user by email or login name
@@ -75,41 +114,73 @@ const login = catchAsync(async (req, res) => {
     where: {
       OR: [
         { email },
-        { loginName: email },
-      ],
-    },
+        { loginName: email }
+      ]
+    }
   });
 
   if (!user) {
-    return badRequestResponse(res, 'Invalid email or password');
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid credentials',
+      message: 'Email or password is incorrect'
+    });
   }
 
-  // Check if user is active
-  if (user.status !== 'ACTIVE') {
-    return badRequestResponse(res, 'Account is inactive');
+  // Check if account is active
+  if (user.status !== 'active') {
+    return res.status(401).json({
+      success: false,
+      error: 'Account inactive',
+      message: 'Your account has been deactivated'
+    });
   }
 
   // Verify password
-  const isPasswordValid = await comparePassword(password, user.passwordHash);
+  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
   if (!isPasswordValid) {
-    return badRequestResponse(res, 'Invalid email or password');
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid credentials',
+      message: 'Email or password is incorrect'
+    });
   }
 
-  // Generate tokens
-  const tokens = generateTokenPair(user);
+  // Generate token
+  const token = generateToken(user.id);
 
-  // Remove password hash from response
-  const { passwordHash, ...userWithoutPassword } = user;
+  // Return user data (excluding password)
+  const userData = {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+    status: user.status,
+    loginName: user.loginName,
+    head1: user.head1,
+    head2: user.head2,
+    joiningDate: user.joiningDate,
+    country: user.country,
+    state: user.state,
+    city: user.city,
+    fullAddress1: user.fullAddress1,
+    fullAddress2: user.fullAddress2,
+    createdAt: user.createdAt
+  };
 
-  return successResponse(res, 200, 'Login successful', {
-    user: userWithoutPassword,
-    ...tokens,
+  res.json({
+    success: true,
+    message: 'Login successful',
+    token,
+    user: userData
   });
 });
 
 // Get current user profile
-const getProfile = catchAsync(async (req, res) => {
+const getProfile = asyncHandler(async (req, res) => {
   const user = await prisma.employee.findUnique({
     where: { id: req.user.id },
     select: {
@@ -120,54 +191,55 @@ const getProfile = catchAsync(async (req, res) => {
       phone: true,
       role: true,
       status: true,
-      dob: true,
+      loginName: true,
+      head1: true,
+      head2: true,
       joiningDate: true,
+      leavingDate: true,
       country: true,
       state: true,
       city: true,
       fullAddress1: true,
       fullAddress2: true,
+      createdAt: true,
+      updatedAt: true,
       reportingManager: {
         select: {
           id: true,
           firstName: true,
           lastName: true,
-          email: true,
-        },
-      },
-      subordinates: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-        },
-      },
-      createdAt: true,
-      updatedAt: true,
-    },
+          email: true
+        }
+      }
+    }
   });
 
   if (!user) {
-    return errorResponse(res, 404, 'User not found');
+    return res.status(404).json({
+      success: false,
+      error: 'User not found'
+    });
   }
 
-  return successResponse(res, 200, 'Profile retrieved successfully', { user });
+  res.json({
+    success: true,
+    user
+  });
 });
 
 // Update user profile
-const updateProfile = catchAsync(async (req, res) => {
+const updateProfile = asyncHandler(async (req, res) => {
   const {
     firstName,
     lastName,
     phone,
-    dob,
+    head1,
+    head2,
     country,
     state,
     city,
     fullAddress1,
-    fullAddress2,
+    fullAddress2
   } = req.body;
 
   const user = await prisma.employee.update({
@@ -176,12 +248,13 @@ const updateProfile = catchAsync(async (req, res) => {
       ...(firstName && { firstName }),
       ...(lastName && { lastName }),
       ...(phone && { phone }),
-      ...(dob && { dob: new Date(dob) }),
+      ...(head1 !== undefined && { head1 }),
+      ...(head2 !== undefined && { head2 }),
       ...(country && { country }),
       ...(state && { state }),
       ...(city && { city }),
       ...(fullAddress1 && { fullAddress1 }),
-      ...(fullAddress2 && { fullAddress2 }),
+      ...(fullAddress2 && { fullAddress2 })
     },
     select: {
       id: true,
@@ -191,60 +264,76 @@ const updateProfile = catchAsync(async (req, res) => {
       phone: true,
       role: true,
       status: true,
-      dob: true,
+      loginName: true,
+      head1: true,
+      head2: true,
+      joiningDate: true,
+      leavingDate: true,
       country: true,
       state: true,
       city: true,
       fullAddress1: true,
       fullAddress2: true,
-      updatedAt: true,
-    },
+      updatedAt: true
+    }
   });
 
-  return successResponse(res, 200, 'Profile updated successfully', { user });
+  res.json({
+    success: true,
+    message: 'Profile updated successfully',
+    user
+  });
 });
 
 // Change password
-const changePassword = catchAsync(async (req, res) => {
+const changePassword = asyncHandler(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   // Get user with password hash
   const user = await prisma.employee.findUnique({
     where: { id: req.user.id },
-    select: { passwordHash: true },
+    select: { passwordHash: true }
   });
 
   // Verify current password
-  const isCurrentPasswordValid = await comparePassword(currentPassword, user.passwordHash);
+  const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
 
   if (!isCurrentPasswordValid) {
-    return badRequestResponse(res, 'Current password is incorrect');
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid current password'
+    });
   }
 
   // Hash new password
-  const newPasswordHash = await hashPassword(newPassword);
+  const saltRounds = 12;
+  const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
 
   // Update password
   await prisma.employee.update({
     where: { id: req.user.id },
-    data: { passwordHash: newPasswordHash },
+    data: { passwordHash: newPasswordHash }
   });
 
-  return successResponse(res, 200, 'Password changed successfully');
+  res.json({
+    success: true,
+    message: 'Password changed successfully'
+  });
 });
 
 // Logout (client-side token removal)
-const logout = catchAsync(async (req, res) => {
-  // In a stateless JWT system, logout is handled client-side
-  // You could implement a token blacklist here if needed
-  return successResponse(res, 200, 'Logged out successfully');
+const logout = asyncHandler(async (req, res) => {
+  res.json({
+    success: true,
+    message: 'Logout successful'
+  });
 });
 
 module.exports = {
-  signup,
+  register,
   login,
   getProfile,
   updateProfile,
   changePassword,
-  logout,
+  logout
 };

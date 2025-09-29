@@ -6,43 +6,37 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 enum UserRole {
   EMPLOYEE
   ENGINEER
-  HO_APPROVER
+  APPROVER
   ADMIN
 }
 
-enum ClaimStatus {
+enum ApprovalStatus {
   PENDING
   APPROVED
   REJECTED
-}
-
-enum AllocationStatus {
-  ACTIVE
-  INACTIVE
-  EXPIRED
 }
 
 model Employee {
   id                Int      @id @default(autoincrement())
   firstName         String   @map("first_name")
   lastName          String   @map("last_name")
-  email             String   @unique
-  phone             String?
   role              UserRole @default(EMPLOYEE)
   reportingManagerId Int?    @map("reporting_manager_id")
   reportingManager  Employee? @relation("ReportingManager", fields: [reportingManagerId], references: [id])
   subordinates      Employee[] @relation("ReportingManager")
-  passwordHash      String   @map("password_hash")
-  loginName         String   @unique @map("login_name")
+  phone             String?
+  email             String   @unique
   dob               DateTime? @db.Date
-  status            String   @default("ACTIVE")
+  status            String   @default("active")
+  loginName         String   @unique @map("login_name")
+  passwordHash      String   @map("password_hash")
   head1             String?
   head2             String?
   joiningDate       DateTime? @map("joining_date") @db.Date
@@ -57,9 +51,6 @@ model Employee {
 
   // Relations
   allocations       Allocation[]
-  claims            Claim[]
-  verifiedClaims    Claim[]     @relation("VerifiedBy")
-  approvedClaims    Claim[]     @relation("ApprovedBy")
   notifications     Notification[]
 
   @@map("employees")
@@ -68,22 +59,40 @@ model Employee {
 model ExpenseType {
   id          Int     @id @default(autoincrement())
   name        String  @unique
-  description String?
   status      Boolean @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
   allocations Allocation[]
-  claims      Claim[]
 
   @@map("expense_types")
+}
+
+model Head1 {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  status    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("head1")
+}
+
+model Head2 {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  status    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("head2")
 }
 
 model Allocation {
   id              Int             @id @default(autoincrement())
   allocationDate  DateTime        @map("allocation_date") @db.Date
-  employeeId      Int             @map("employee_id")
+  empId           Int             @map("emp_id")
   expenseTypeId   Int             @map("expense_type_id")
   amount          Decimal         @db.Decimal(10, 2)
   remarks         String?
@@ -91,66 +100,30 @@ model Allocation {
   billDate        DateTime?       @map("bill_date") @db.Date
   fileUrl         String?         @map("file_url")
   notes           String?
-  status          AllocationStatus @default(ACTIVE)
-  statusEng       String?         @map("status_eng")
+  statusEng       ApprovalStatus  @default(PENDING) @map("status_eng")
   notesEng        String?         @map("notes_eng")
-  statusHo        String?         @map("status_ho")
+  statusHo        ApprovalStatus  @default(PENDING) @map("status_ho")
   notesHo         String?         @map("notes_ho")
   originalBill    Boolean         @default(false) @map("original_bill")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
 
   // Relations
-  employee        Employee        @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee        Employee        @relation(fields: [empId], references: [id], onDelete: Cascade)
   expenseType     ExpenseType     @relation(fields: [expenseTypeId], references: [id], onDelete: Cascade)
-  claims          Claim[]
 
   @@map("allocations")
 }
 
-model Claim {
-  id              Int         @id @default(autoincrement())
-  employeeId      Int         @map("employee_id")
-  expenseTypeId   Int         @map("expense_type_id")
-  allocationId    Int?        @map("allocation_id")
-  amount          Decimal     @db.Decimal(10, 2)
-  description     String?
-  billNumber      String?     @map("bill_number")
-  billDate        DateTime    @map("bill_date") @db.Date
-  fileUrl         String?     @map("file_url")
-  notes           String?
-  status          ClaimStatus @default(PENDING)
-  verifiedById    Int?        @map("verified_by_id")
-  verifiedAt      DateTime?   @map("verified_at")
-  verifiedNotes   String?     @map("verified_notes")
-  approvedById    Int?        @map("approved_by_id")
-  approvedAt      DateTime?   @map("approved_at")
-  approvedNotes   String?     @map("approved_notes")
-  rejectionReason String?     @map("rejection_reason")
-  createdAt       DateTime    @default(now()) @map("created_at")
-  updatedAt       DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  employee        Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  expenseType     ExpenseType @relation(fields: [expenseTypeId], references: [id], onDelete: Cascade)
-  allocation      Allocation? @relation(fields: [allocationId], references: [id], onDelete: SetNull)
-  verifiedBy      Employee?   @relation("VerifiedBy", fields: [verifiedById], references: [id])
-  approvedBy      Employee?   @relation("ApprovedBy", fields: [approvedById], references: [id])
-
-  @@map("claims")
-}
-
 model Notification {
-  id          Int      @id @default(autoincrement())
-  employeeId  Int      @map("employee_id")
-  title       String
-  message     String
-  type        String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
-  isRead      Boolean  @default(false) @map("is_read")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  user      Employee @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }

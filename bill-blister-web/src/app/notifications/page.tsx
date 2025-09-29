@@ -14,7 +14,7 @@ import {
   ExclamationTriangleIcon,
   InformationCircleIcon,
   TrashIcon,
-  MarkAsReadIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline'
 import { Notification, NotificationType } from '@/types'
 
@@ -232,7 +232,7 @@ const NotificationsPage: React.FC = () => {
                   {unreadCount > 0 && (
                     <Button
                       variant="secondary"
-                      icon={<MarkAsReadIcon className="w-4 h-4" />}
+                      icon={<CheckIcon className="w-4 h-4" />}
                       onClick={markAllAsRead}
                     >
                       Mark All Read

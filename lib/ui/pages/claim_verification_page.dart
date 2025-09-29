@@ -53,10 +53,10 @@ class _ClaimVerificationPageState extends State<ClaimVerificationPage> {
                           child: CircleAvatar(
                             backgroundColor: Colors.white,
                             radius: 60,
-                            backgroundImage: claim.receiptPath != null
-                                ? FileImage(File(claim.receiptPath!))
+                            backgroundImage: claim.fileUrl != null
+                                ? NetworkImage(claim.fileUrl!)
                                 : null,
-                            child: claim.receiptPath == null
+                            child: claim.fileUrl == null
                                 ? const Icon(
                                     Icons.image_outlined,
                                     size: 40,
@@ -86,7 +86,7 @@ class _ClaimVerificationPageState extends State<ClaimVerificationPage> {
   }
 
   Future<void> _onTapReceipt(BuildContext context) async {
-    if (claim.receiptPath == null) {
+    if (claim.fileUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No receipt attached')),
       );
@@ -97,8 +97,8 @@ class _ClaimVerificationPageState extends State<ClaimVerificationPage> {
       builder: (context) {
         return Dialog(
           child: InteractiveViewer(
-            child: Image.file(
-              File(claim.receiptPath!),
+            child: Image.network(
+              claim.fileUrl!,
               fit: BoxFit.contain,
             ),
           ),
@@ -110,7 +110,7 @@ class _ClaimVerificationPageState extends State<ClaimVerificationPage> {
   Future<void> _handleVerify(BuildContext context) async {
     final ok = await _confirm(context, 'Verify this claim?');
     if (ok && mounted) {
-      setState(() => claim.engineerStatus = ClaimStatus.approved);
+      // TODO: Implement actual verification API call
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Claim verified')));
     }
@@ -119,7 +119,7 @@ class _ClaimVerificationPageState extends State<ClaimVerificationPage> {
   Future<void> _handleReject(BuildContext context) async {
     final reason = await _rejectSheet(context);
     if (reason != null && mounted) {
-      setState(() => claim.engineerStatus = ClaimStatus.rejected);
+      // TODO: Implement actual rejection API call
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -240,17 +240,17 @@ class _VerificationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          KvRow(label: 'Employee Name', value: Text(claim.employeeName)),
-          KvRow(label: 'Expense Type', value: Text(claim.expenseType)),
+          KvRow(label: 'Employee Name', value: Text(claim.employeeName ?? 'Unknown')),
+          KvRow(label: 'Expense Type', value: Text(claim.expenseTypeName ?? 'Unknown')),
           KvRow(
             label: 'LPO Number',
-            value: Text(claim.lpoNumber ?? '—',
+            value: Text(claim.billNumber ?? '—',
                 style: const TextStyle(color: Color(0xFF6B7280))),
           ),
-          KvRow(label: 'Bill Date', value: Text(claim.billDate)),
+          KvRow(label: 'Bill Date', value: Text(claim.formattedBillDate)),
           KvRow(
               label: 'Bill Amount',
-              value: Text(claim.billAmount.toStringAsFixed(2))),
+              value: Text(claim.amount.toStringAsFixed(2))),
           KvRow(
             label: 'Engineer Approval',
             value: StatusChip(status: claim.engineerStatus),
@@ -259,13 +259,13 @@ class _VerificationCard extends StatelessWidget {
             label: 'HO Approval',
             value: StatusChip(status: claim.hoStatus),
           ),
-          KvRow(label: 'Submitted Date', value: Text(claim.submittedDate)),
+          KvRow(label: 'Submitted Date', value: Text(claim.formattedSubmittedDate)),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: claim.engineerStatus == ClaimStatus.approved
+                  onPressed: claim.status == ClaimStatus.approved
                       ? null
                       : () => onVerify(context),
                   icon: const Icon(Icons.check_rounded),
@@ -281,7 +281,7 @@ class _VerificationCard extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: claim.engineerStatus == ClaimStatus.rejected
+                  onPressed: claim.status == ClaimStatus.rejected
                       ? null
                       : () => onReject(context),
                   icon: const Icon(Icons.close_rounded),

@@ -1,60 +1,63 @@
 const { prisma } = require('../config/database');
-const { successResponse, errorResponse, paginatedResponse } = require('../utils/response');
-const { catchAsync } = require('../middlewares/errorHandler');
-const { paginate } = require('../utils/response');
-const { uploadFile, generateFilePath } = require('../utils/fileUpload');
-const { initializeFirebase } = require('../config/firebase');
-
-// Initialize Firebase
-initializeFirebase();
+const { uploadFile } = require('../config/firebase');
+const { asyncHandler } = require('../middlewares/errorHandler');
 
 // Get all allocations with pagination and filtering
-const getAllocations = catchAsync(async (req, res) => {
+const getAllocations = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
+    sortBy = 'allocationDate',
+    sortOrder = 'desc',
     search,
-    employeeId,
+    empId,
     expenseTypeId,
-    status,
+    statusEng,
+    statusHo,
     startDate,
     endDate,
-    sortBy = 'createdAt',
-    sortOrder = 'desc',
+    minAmount,
+    maxAmount
   } = req.query;
 
-  const pagination = paginate(parseInt(page), parseInt(limit));
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const take = parseInt(limit);
 
   // Build where clause
   const where = {};
-  
+
   if (search) {
     where.OR = [
       { remarks: { contains: search, mode: 'insensitive' } },
       { billNumber: { contains: search, mode: 'insensitive' } },
       { notes: { contains: search, mode: 'insensitive' } },
-      { employee: {
+      { employee: { 
         OR: [
           { firstName: { contains: search, mode: 'insensitive' } },
           { lastName: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-        ],
+          { email: { contains: search, mode: 'insensitive' } }
+        ]
       }},
+      { expenseType: { name: { contains: search, mode: 'insensitive' } } }
     ];
   }
-  
-  if (employeeId) {
-    where.employeeId = parseInt(employeeId);
+
+  if (empId) {
+    where.empId = parseInt(empId);
   }
-  
+
   if (expenseTypeId) {
     where.expenseTypeId = parseInt(expenseTypeId);
   }
-  
-  if (status) {
-    where.status = status;
+
+  if (statusEng) {
+    where.statusEng = statusEng;
   }
-  
+
+  if (statusHo) {
+    where.statusHo = statusHo;
+  }
+
   if (startDate || endDate) {
     where.allocationDate = {};
     if (startDate) {
@@ -62,6 +65,16 @@ const getAllocations = catchAsync(async (req, res) => {
     }
     if (endDate) {
       where.allocationDate.lte = new Date(endDate);
+    }
+  }
+
+  if (minAmount || maxAmount) {
+    where.amount = {};
+    if (minAmount) {
+      where.amount.gte = parseFloat(minAmount);
+    }
+    if (maxAmount) {
+      where.amount.lte = parseFloat(maxAmount);
     }
   }
 
@@ -69,6 +82,9 @@ const getAllocations = catchAsync(async (req, res) => {
   const [allocations, total] = await Promise.all([
     prisma.allocation.findMany({
       where,
+      skip,
+      take,
+      orderBy: { [sortBy]: sortOrder },
       include: {
         employee: {
           select: {
@@ -76,33 +92,38 @@ const getAllocations = catchAsync(async (req, res) => {
             firstName: true,
             lastName: true,
             email: true,
-            role: true,
-          },
+            role: true
+          }
         },
         expenseType: {
           select: {
             id: true,
-            name: true,
-            description: true,
-          },
-        },
-        _count: {
-          select: {
-            claims: true,
-          },
-        },
-      },
-      orderBy: { [sortBy]: sortOrder },
-      ...pagination,
+            name: true
+          }
+        }
+      }
     }),
-    prisma.allocation.count({ where }),
+    prisma.allocation.count({ where })
   ]);
 
-  return paginatedResponse(res, { results: allocations, total }, pagination, 'Allocations retrieved successfully');
+  const totalPages = Math.ceil(total / parseInt(limit));
+
+  res.json({
+    success: true,
+    data: allocations,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages,
+      totalItems: total,
+      itemsPerPage: parseInt(limit),
+      hasNextPage: parseInt(page) < totalPages,
+      hasPrevPage: parseInt(page) > 1
+    }
+  });
 });
 
 // Get allocation by ID
-const getAllocationById = catchAsync(async (req, res) => {
+const getAllocationById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   const allocation = await prisma.allocation.findUnique({
@@ -114,95 +135,98 @@ const getAllocationById = catchAsync(async (req, res) => {
           firstName: true,
           lastName: true,
           email: true,
-          role: true,
           phone: true,
-        },
+          role: true,
+          head1: true,
+          head2: true
+        }
       },
       expenseType: {
         select: {
           id: true,
           name: true,
-          description: true,
-        },
-      },
-      claims: {
-        select: {
-          id: true,
-          amount: true,
-          description: true,
-          status: true,
-          createdAt: true,
-        },
-      },
-    },
+          status: true
+        }
+      }
+    }
   });
 
   if (!allocation) {
-    return errorResponse(res, 404, 'Allocation not found');
+    return res.status(404).json({
+      success: false,
+      error: 'Allocation not found'
+    });
   }
 
-  return successResponse(res, 200, 'Allocation retrieved successfully', { allocation });
+  res.json({
+    success: true,
+    data: allocation
+  });
 });
 
 // Create new allocation
-const createAllocation = catchAsync(async (req, res) => {
+const createAllocation = asyncHandler(async (req, res) => {
   const {
     allocationDate,
-    employeeId,
+    empId,
     expenseTypeId,
     amount,
     remarks,
     billNumber,
     billDate,
     notes,
+    originalBill = false
   } = req.body;
 
   // Verify employee exists
   const employee = await prisma.employee.findUnique({
-    where: { id: parseInt(employeeId) },
-    select: { id: true, status: true },
+    where: { id: parseInt(empId) }
   });
 
   if (!employee) {
-    return errorResponse(res, 404, 'Employee not found');
-  }
-
-  if (employee.status !== 'ACTIVE') {
-    return errorResponse(res, 400, 'Cannot create allocation for inactive employee');
+    return res.status(400).json({
+      success: false,
+      error: 'Employee not found'
+    });
   }
 
   // Verify expense type exists
   const expenseType = await prisma.expenseType.findUnique({
-    where: { id: parseInt(expenseTypeId) },
-    select: { id: true, status: true },
+    where: { id: parseInt(expenseTypeId) }
   });
 
   if (!expenseType) {
-    return errorResponse(res, 404, 'Expense type not found');
+    return res.status(400).json({
+      success: false,
+      error: 'Expense type not found'
+    });
   }
 
   if (!expenseType.status) {
-    return errorResponse(res, 400, 'Cannot create allocation for inactive expense type');
+    return res.status(400).json({
+      success: false,
+      error: 'Expense type is inactive'
+    });
   }
 
   // Handle file upload if present
   let fileUrl = null;
   if (req.file) {
     try {
-      const fileName = `${Date.now()}_${req.file.originalname}`;
-      const filePath = generateFilePath('allocations', fileName);
-      fileUrl = await uploadFile(req.file, filePath);
+      fileUrl = await uploadFile(req.file, 'allocations');
     } catch (error) {
-      console.error('File upload error:', error);
-      return errorResponse(res, 500, 'File upload failed');
+      return res.status(400).json({
+        success: false,
+        error: 'File upload failed',
+        message: error.message
+      });
     }
   }
 
-  // Create allocation
   const allocation = await prisma.allocation.create({
     data: {
       allocationDate: new Date(allocationDate),
-      employeeId: parseInt(employeeId),
+      empId: parseInt(empId),
       expenseTypeId: parseInt(expenseTypeId),
       amount: parseFloat(amount),
       remarks,
@@ -210,6 +234,7 @@ const createAllocation = catchAsync(async (req, res) => {
       billDate: billDate ? new Date(billDate) : null,
       fileUrl,
       notes,
+      originalBill
     },
     include: {
       employee: {
@@ -218,75 +243,84 @@ const createAllocation = catchAsync(async (req, res) => {
           firstName: true,
           lastName: true,
           email: true,
-          role: true,
-        },
+          role: true
+        }
       },
       expenseType: {
         select: {
           id: true,
-          name: true,
-          description: true,
-        },
-      },
-    },
+          name: true
+        }
+      }
+    }
   });
 
-  return successResponse(res, 201, 'Allocation created successfully', { allocation });
+  res.status(201).json({
+    success: true,
+    message: 'Allocation created successfully',
+    data: allocation
+  });
 });
 
 // Update allocation
-const updateAllocation = catchAsync(async (req, res) => {
+const updateAllocation = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const {
     allocationDate,
-    employeeId,
+    empId,
     expenseTypeId,
     amount,
     remarks,
     billNumber,
     billDate,
     notes,
-    status,
+    originalBill
   } = req.body;
 
   // Check if allocation exists
   const existingAllocation = await prisma.allocation.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: parseInt(id) }
   });
 
   if (!existingAllocation) {
-    return errorResponse(res, 404, 'Allocation not found');
+    return res.status(404).json({
+      success: false,
+      error: 'Allocation not found'
+    });
   }
 
-  // Verify employee exists if being changed
-  if (employeeId && employeeId !== existingAllocation.employeeId) {
+  // Verify employee if provided
+  if (empId) {
     const employee = await prisma.employee.findUnique({
-      where: { id: parseInt(employeeId) },
-      select: { id: true, status: true },
+      where: { id: parseInt(empId) }
     });
 
     if (!employee) {
-      return errorResponse(res, 404, 'Employee not found');
-    }
-
-    if (employee.status !== 'ACTIVE') {
-      return errorResponse(res, 400, 'Cannot assign allocation to inactive employee');
+      return res.status(400).json({
+        success: false,
+        error: 'Employee not found'
+      });
     }
   }
 
-  // Verify expense type exists if being changed
-  if (expenseTypeId && expenseTypeId !== existingAllocation.expenseTypeId) {
+  // Verify expense type if provided
+  if (expenseTypeId) {
     const expenseType = await prisma.expenseType.findUnique({
-      where: { id: parseInt(expenseTypeId) },
-      select: { id: true, status: true },
+      where: { id: parseInt(expenseTypeId) }
     });
 
     if (!expenseType) {
-      return errorResponse(res, 404, 'Expense type not found');
+      return res.status(400).json({
+        success: false,
+        error: 'Expense type not found'
+      });
     }
 
     if (!expenseType.status) {
-      return errorResponse(res, 400, 'Cannot assign allocation to inactive expense type');
+      return res.status(400).json({
+        success: false,
+        error: 'Expense type is inactive'
+      });
     }
   }
 
@@ -294,29 +328,29 @@ const updateAllocation = catchAsync(async (req, res) => {
   let fileUrl = existingAllocation.fileUrl;
   if (req.file) {
     try {
-      const fileName = `${Date.now()}_${req.file.originalname}`;
-      const filePath = generateFilePath('allocations', fileName);
-      fileUrl = await uploadFile(req.file, filePath);
+      fileUrl = await uploadFile(req.file, 'allocations');
     } catch (error) {
-      console.error('File upload error:', error);
-      return errorResponse(res, 500, 'File upload failed');
+      return res.status(400).json({
+        success: false,
+        error: 'File upload failed',
+        message: error.message
+      });
     }
   }
 
-  // Update allocation
   const allocation = await prisma.allocation.update({
     where: { id: parseInt(id) },
     data: {
       ...(allocationDate && { allocationDate: new Date(allocationDate) }),
-      ...(employeeId && { employeeId: parseInt(employeeId) }),
+      ...(empId && { empId: parseInt(empId) }),
       ...(expenseTypeId && { expenseTypeId: parseInt(expenseTypeId) }),
       ...(amount && { amount: parseFloat(amount) }),
       ...(remarks !== undefined && { remarks }),
       ...(billNumber !== undefined && { billNumber }),
       ...(billDate !== undefined && { billDate: billDate ? new Date(billDate) : null }),
-      ...(notes !== undefined && { notes }),
-      ...(status && { status }),
       ...(fileUrl && { fileUrl }),
+      ...(notes !== undefined && { notes }),
+      ...(originalBill !== undefined && { originalBill })
     },
     include: {
       employee: {
@@ -325,132 +359,224 @@ const updateAllocation = catchAsync(async (req, res) => {
           firstName: true,
           lastName: true,
           email: true,
-          role: true,
-        },
+          role: true
+        }
       },
       expenseType: {
         select: {
           id: true,
-          name: true,
-          description: true,
-        },
-      },
-    },
+          name: true
+        }
+      }
+    }
   });
 
-  return successResponse(res, 200, 'Allocation updated successfully', { allocation });
+  res.json({
+    success: true,
+    message: 'Allocation updated successfully',
+    data: allocation
+  });
 });
 
 // Delete allocation
-const deleteAllocation = catchAsync(async (req, res) => {
+const deleteAllocation = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
   // Check if allocation exists
   const allocation = await prisma.allocation.findUnique({
-    where: { id: parseInt(id) },
-    include: {
-      _count: {
-        select: {
-          claims: true,
-        },
-      },
-    },
+    where: { id: parseInt(id) }
   });
 
   if (!allocation) {
-    return errorResponse(res, 404, 'Allocation not found');
+    return res.status(404).json({
+      success: false,
+      error: 'Allocation not found'
+    });
   }
 
-  // Check if allocation has associated claims
-  if (allocation._count.claims > 0) {
-    return errorResponse(res, 409, 'Cannot delete allocation that has associated claims');
-  }
-
-  // Delete allocation
   await prisma.allocation.delete({
-    where: { id: parseInt(id) },
+    where: { id: parseInt(id) }
   });
 
-  return successResponse(res, 200, 'Allocation deleted successfully');
+  res.json({
+    success: true,
+    message: 'Allocation deleted successfully'
+  });
+});
+
+// Engineer verification
+const verifyAllocation = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { approved, notes } = req.body;
+
+  const allocation = await prisma.allocation.findUnique({
+    where: { id: parseInt(id) }
+  });
+
+  if (!allocation) {
+    return res.status(404).json({
+      success: false,
+      error: 'Allocation not found'
+    });
+  }
+
+  const updatedAllocation = await prisma.allocation.update({
+    where: { id: parseInt(id) },
+    data: {
+      statusEng: approved ? 'APPROVED' : 'REJECTED',
+      notesEng: notes
+    },
+    include: {
+      employee: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      },
+      expenseType: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    }
+  });
+
+  // Create notification for employee
+  await prisma.notification.create({
+    data: {
+      userId: allocation.empId,
+      message: `Your allocation has been ${approved ? 'approved' : 'rejected'} by engineer.`
+    }
+  });
+
+  res.json({
+    success: true,
+    message: `Allocation ${approved ? 'approved' : 'rejected'} successfully`,
+    data: updatedAllocation
+  });
+});
+
+// HO approval
+const approveAllocation = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { approved, notes } = req.body;
+
+  const allocation = await prisma.allocation.findUnique({
+    where: { id: parseInt(id) }
+  });
+
+  if (!allocation) {
+    return res.status(404).json({
+      success: false,
+      error: 'Allocation not found'
+    });
+  }
+
+  // Check if engineer has approved first
+  if (allocation.statusEng !== 'APPROVED') {
+    return res.status(400).json({
+      success: false,
+      error: 'Engineer approval required',
+      message: 'Allocation must be approved by engineer first'
+    });
+  }
+
+  const updatedAllocation = await prisma.allocation.update({
+    where: { id: parseInt(id) },
+    data: {
+      statusHo: approved ? 'APPROVED' : 'REJECTED',
+      notesHo: notes
+    },
+    include: {
+      employee: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true
+        }
+      },
+      expenseType: {
+        select: {
+          id: true,
+          name: true
+        }
+      }
+    }
+  });
+
+  // Create notification for employee
+  await prisma.notification.create({
+    data: {
+      userId: allocation.empId,
+      message: `Your allocation has been ${approved ? 'approved' : 'rejected'} by HO.`
+    }
+  });
+
+  res.json({
+    success: true,
+    message: `Allocation ${approved ? 'approved' : 'rejected'} successfully`,
+    data: updatedAllocation
+  });
 });
 
 // Get allocation statistics
-const getAllocationStats = catchAsync(async (req, res) => {
-  const {
-    employeeId,
-    expenseTypeId,
-    startDate,
-    endDate,
-  } = req.query;
-
-  // Build where clause
-  const where = {};
-  
-  if (employeeId) {
-    where.employeeId = parseInt(employeeId);
-  }
-  
-  if (expenseTypeId) {
-    where.expenseTypeId = parseInt(expenseTypeId);
-  }
-  
-  if (startDate || endDate) {
-    where.allocationDate = {};
-    if (startDate) {
-      where.allocationDate.gte = new Date(startDate);
-    }
-    if (endDate) {
-      where.allocationDate.lte = new Date(endDate);
-    }
-  }
-
+const getAllocationStats = asyncHandler(async (req, res) => {
   const [
     totalAllocations,
+    pendingEng,
+    approvedEng,
+    rejectedEng,
+    pendingHo,
+    approvedHo,
+    rejectedHo,
     totalAmount,
-    allocationsByStatus,
-    allocationsByEmployee,
-    allocationsByExpenseType,
+    monthlyStats
   ] = await Promise.all([
-    prisma.allocation.count({ where }),
+    prisma.allocation.count(),
+    prisma.allocation.count({ where: { statusEng: 'PENDING' } }),
+    prisma.allocation.count({ where: { statusEng: 'APPROVED' } }),
+    prisma.allocation.count({ where: { statusEng: 'REJECTED' } }),
+    prisma.allocation.count({ where: { statusHo: 'PENDING' } }),
+    prisma.allocation.count({ where: { statusHo: 'APPROVED' } }),
+    prisma.allocation.count({ where: { statusHo: 'REJECTED' } }),
     prisma.allocation.aggregate({
-      where,
-      _sum: { amount: true },
+      _sum: { amount: true }
     }),
     prisma.allocation.groupBy({
-      by: ['status'],
-      where,
-      _count: { status: true },
+      by: ['allocationDate'],
       _sum: { amount: true },
-    }),
-    prisma.allocation.groupBy({
-      by: ['employeeId'],
-      where,
-      _count: { employeeId: true },
-      _sum: { amount: true },
-    }),
-    prisma.allocation.groupBy({
-      by: ['expenseTypeId'],
-      where,
-      _count: { expenseTypeId: true },
-      _sum: { amount: true },
-    }),
+      _count: { id: true },
+      where: {
+        allocationDate: {
+          gte: new Date(new Date().setMonth(new Date().getMonth() - 6))
+        }
+      },
+      orderBy: { allocationDate: 'asc' }
+    })
   ]);
 
-  const stats = {
-    total: totalAllocations,
-    totalAmount: totalAmount._sum.amount || 0,
-    byStatus: allocationsByStatus.reduce((acc, item) => {
-      acc[item.status] = {
-        count: item._count.employeeId,
-        amount: item._sum.amount || 0,
-      };
-      return acc;
-    }, {}),
-    byEmployee: allocationsByEmployee.length,
-    byExpenseType: allocationsByExpenseType.length,
-  };
-
-  return successResponse(res, 200, 'Allocation statistics retrieved successfully', { stats });
+  res.json({
+    success: true,
+    data: {
+      totalAllocations,
+      engineerStatus: {
+        pending: pendingEng,
+        approved: approvedEng,
+        rejected: rejectedEng
+      },
+      hoStatus: {
+        pending: pendingHo,
+        approved: approvedHo,
+        rejected: rejectedHo
+      },
+      totalAmount: totalAmount._sum.amount || 0,
+      monthlyStats
+    }
+  });
 });
 
 module.exports = {
@@ -459,5 +585,7 @@ module.exports = {
   createAllocation,
   updateAllocation,
   deleteAllocation,
-  getAllocationStats,
+  verifyAllocation,
+  approveAllocation,
+  getAllocationStats
 };

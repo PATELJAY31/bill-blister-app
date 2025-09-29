@@ -13,18 +13,29 @@ if (!fs.existsSync(envPath)) {
   console.log('📝 Creating .env file...');
   
   const envContent = `# Database Configuration
-DATABASE_URL="postgresql://postgres:password@localhost:5432/bill_blister_db?schema=public"
+DATABASE_URL="mysql://root:password@localhost:3306/bill_blister_db"
 
 # JWT Configuration
-JWT_SECRET="bill-blister-super-secret-jwt-key-2024"
+JWT_SECRET="bill-blister-super-secret-jwt-key-2024-make-it-very-long-and-secure"
 JWT_EXPIRES_IN="7d"
 
 # Server Configuration
-PORT=3001
+PORT=5000
 NODE_ENV="development"
 
+# Firebase Configuration (Optional - for file uploads)
+FIREBASE_PROJECT_ID="your-firebase-project-id"
+FIREBASE_PRIVATE_KEY_ID="your-private-key-id"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\nYour Firebase Private Key Here\\n-----END PRIVATE KEY-----"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com"
+FIREBASE_CLIENT_ID="your-client-id"
+FIREBASE_AUTH_URI="https://accounts.google.com/o/oauth2/auth"
+FIREBASE_TOKEN_URI="https://oauth2.googleapis.com/token"
+FIREBASE_AUTH_PROVIDER_X509_CERT_URL="https://www.googleapis.com/oauth2/v1/certs"
+FIREBASE_CLIENT_X509_CERT_URL="https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xxxxx%40your-project.iam.gserviceaccount.com"
+
 # CORS Configuration
-CORS_ORIGIN="http://localhost:3000"
+CORS_ORIGIN="http://localhost:3000,http://localhost:5173"
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
@@ -61,16 +72,16 @@ try {
   process.exit(1);
 }
 
-// Check if PostgreSQL is running
-console.log('🐘 Checking PostgreSQL connection...');
+// Check if MySQL is running
+console.log('🐬 Checking MySQL connection...');
 try {
   execSync('npx prisma db push', { stdio: 'inherit' });
   console.log('✅ Database schema pushed successfully\n');
 } catch (error) {
   console.error('❌ Failed to connect to database:', error.message);
   console.log('\n📋 Database Setup Instructions:');
-  console.log('1. Install PostgreSQL (v12 or higher)');
-  console.log('2. Create database: createdb bill_blister_db');
+  console.log('1. Install MySQL (v8.0 or higher)');
+  console.log('2. Create database: CREATE DATABASE bill_blister_db;');
   console.log('3. Update DATABASE_URL in .env file');
   console.log('4. Run: npm run db:push');
   console.log('5. Run: npm run db:seed\n');
@@ -88,13 +99,17 @@ try {
 
 console.log('🎉 Setup completed successfully!');
 console.log('\n📋 Next Steps:');
-console.log('1. Start the backend: npm run dev');
-console.log('2. Start the frontend: cd ../bill-blister-web && npm run dev');
-console.log('3. Open http://localhost:3000 in your browser');
+console.log('1. Update your .env file with actual configuration values');
+console.log('2. Make sure your MySQL database is running');
+console.log('3. Configure Firebase for file uploads (optional)');
+console.log('4. Start the backend: npm run dev');
+console.log('5. Start the frontend: cd ../bill-blister-web && npm run dev');
+console.log('6. Open http://localhost:3000 in your browser');
 console.log('\n🔑 Demo Credentials:');
 console.log('Admin: admin@billblister.com / password123');
 console.log('Employee: employee@billblister.com / password123');
 console.log('Engineer: engineer@billblister.com / password123');
 console.log('HO Approver: approver@billblister.com / password123');
-console.log('\n📚 API Documentation: http://localhost:3001/api');
+console.log('\n📚 API Documentation: http://localhost:5000/api');
 console.log('🔍 Database Studio: npm run db:studio');
+console.log('📋 Postman Collection: Import postman-collection.json to test API endpoints');

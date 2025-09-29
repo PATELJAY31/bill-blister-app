@@ -25,6 +25,17 @@ const disconnectDB = async () => {
   }
 };
 
+// Handle process termination
+process.on('SIGINT', async () => {
+  await disconnectDB();
+  process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
+  await disconnectDB();
+  process.exit(0);
+});
+
 module.exports = {
   prisma,
   connectDB,

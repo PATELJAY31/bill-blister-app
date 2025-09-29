@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -9,24 +10,53 @@ const seedData = async () => {
 
     // Clear existing data
     await prisma.notification.deleteMany();
-    await prisma.claim.deleteMany();
     await prisma.allocation.deleteMany();
     await prisma.employee.deleteMany();
     await prisma.expenseType.deleteMany();
+    await prisma.head1.deleteMany();
+    await prisma.head2.deleteMany();
 
     console.log('🗑️ Cleared existing data');
+
+    // Create Head1 entries
+    const head1Entries = await prisma.head1.createMany({
+      data: [
+        { name: 'Engineering', status: true },
+        { name: 'Sales', status: true },
+        { name: 'Marketing', status: true },
+        { name: 'HR', status: true },
+        { name: 'Finance', status: true },
+      ],
+    });
+
+    console.log('✅ Created Head1 entries');
+
+    // Create Head2 entries
+    const head2Entries = await prisma.head2.createMany({
+      data: [
+        { name: 'Development', status: true },
+        { name: 'QA', status: true },
+        { name: 'DevOps', status: true },
+        { name: 'Business Development', status: true },
+        { name: 'Digital Marketing', status: true },
+        { name: 'Recruitment', status: true },
+        { name: 'Accounting', status: true },
+      ],
+    });
+
+    console.log('✅ Created Head2 entries');
 
     // Create expense types
     const expenseTypes = await prisma.expenseType.createMany({
       data: [
-        { name: 'Food', description: 'Meals and food expenses', status: true },
-        { name: 'Travel', description: 'Transportation and travel expenses', status: true },
-        { name: 'Office Supplies', description: 'Stationery and office materials', status: true },
-        { name: 'Conference & Trade Show Registration', description: 'Event registration fees', status: true },
-        { name: 'Accommodation', description: 'Hotel and lodging expenses', status: true },
-        { name: 'Transportation', description: 'Local transportation costs', status: true },
-        { name: 'Entertainment', description: 'Client entertainment expenses', status: true },
-        { name: 'Other', description: 'Miscellaneous expenses', status: true },
+        { name: 'Food', status: true },
+        { name: 'Travel', status: true },
+        { name: 'Office Supplies', status: true },
+        { name: 'Conference & Trade Show Registration', status: true },
+        { name: 'Accommodation', status: true },
+        { name: 'Transportation', status: true },
+        { name: 'Entertainment', status: true },
+        { name: 'Other', status: true },
       ],
     });
 
@@ -46,84 +76,96 @@ const seedData = async () => {
           lastName: 'User',
           email: 'admin@billblister.com',
           passwordHash: hashedPassword,
-          loginName: 'admin@billblister.com',
+          loginName: 'admin',
           role: 'ADMIN',
           phone: '+1234567890',
-          status: 'ACTIVE',
+          status: 'active',
           joiningDate: new Date('2023-01-01'),
           country: 'USA',
           state: 'California',
           city: 'San Francisco',
+          head1: 'Engineering',
+          head2: 'Development',
         },
         {
           firstName: 'John',
           lastName: 'Engineer',
-          email: 'john.engineer@billblister.com',
+          email: 'engineer@billblister.com',
           passwordHash: hashedPassword,
-          loginName: 'john.engineer@billblister.com',
+          loginName: 'engineer',
           role: 'ENGINEER',
           phone: '+1234567891',
-          status: 'ACTIVE',
+          status: 'active',
           joiningDate: new Date('2023-02-01'),
           country: 'USA',
           state: 'California',
           city: 'San Francisco',
+          head1: 'Engineering',
+          head2: 'Development',
         },
         {
           firstName: 'Jane',
           lastName: 'Approver',
-          email: 'jane.approver@billblister.com',
+          email: 'approver@billblister.com',
           passwordHash: hashedPassword,
-          loginName: 'jane.approver@billblister.com',
-          role: 'HO_APPROVER',
+          loginName: 'approver',
+          role: 'APPROVER',
           phone: '+1234567892',
-          status: 'ACTIVE',
+          status: 'active',
           joiningDate: new Date('2023-03-01'),
           country: 'USA',
           state: 'California',
           city: 'San Francisco',
+          head1: 'Finance',
+          head2: 'Accounting',
         },
         {
           firstName: 'Saloni',
           lastName: 'Jadav',
           email: 'saloni.jadav@billblister.com',
           passwordHash: hashedPassword,
-          loginName: 'saloni.jadav@billblister.com',
+          loginName: 'saloni.jadav',
           role: 'EMPLOYEE',
           phone: '+1234567893',
-          status: 'ACTIVE',
+          status: 'active',
           joiningDate: new Date('2023-04-01'),
           country: 'India',
           state: 'Maharashtra',
           city: 'Mumbai',
+          head1: 'Engineering',
+          head2: 'Development',
         },
         {
           firstName: 'Nehal',
           lastName: 'Patel',
           email: 'nehal.patel@billblister.com',
           passwordHash: hashedPassword,
-          loginName: 'nehal.patel@billblister.com',
+          loginName: 'nehal.patel',
           role: 'EMPLOYEE',
           phone: '+1234567894',
-          status: 'ACTIVE',
+          status: 'active',
           joiningDate: new Date('2023-05-01'),
           country: 'India',
           state: 'Gujarat',
           city: 'Ahmedabad',
+          head1: 'Sales',
+          head2: 'Business Development',
         },
         {
           firstName: 'Aarav',
           lastName: 'Sharma',
           email: 'aarav.sharma@billblister.com',
           passwordHash: hashedPassword,
-          loginName: 'aarav.sharma@billblister.com',
+          loginName: 'aarav.sharma',
           role: 'EMPLOYEE',
           phone: '+1234567895',
-          status: 'ACTIVE',
+          status: 'active',
           joiningDate: new Date('2023-06-01'),
           country: 'India',
           state: 'Delhi',
           city: 'New Delhi',
+          head1: 'Marketing',
+          head2: 'Digital Marketing',
         },
       ],
     });
@@ -144,107 +186,75 @@ const seedData = async () => {
       data: [
         {
           allocationDate: new Date('2024-01-15'),
-          employeeId: createdEmployees.find(e => e.firstName === 'Saloni').id,
+          empId: createdEmployees.find(e => e.firstName === 'Saloni').id,
           expenseTypeId: createdExpenseTypes.find(et => et.name === 'Food').id,
           amount: 100.00,
           remarks: 'Monthly food allowance',
-          status: 'ACTIVE',
+          statusEng: 'APPROVED',
+          statusHo: 'PENDING',
+          notesEng: 'Approved by engineer',
         },
         {
           allocationDate: new Date('2024-01-16'),
-          employeeId: createdEmployees.find(e => e.firstName === 'Nehal').id,
+          empId: createdEmployees.find(e => e.firstName === 'Nehal').id,
           expenseTypeId: createdExpenseTypes.find(et => et.name === 'Travel').id,
           amount: 450.50,
           remarks: 'Client meeting travel',
           billNumber: 'LPO-0031',
-          status: 'ACTIVE',
+          billDate: new Date('2024-01-16'),
+          statusEng: 'APPROVED',
+          statusHo: 'APPROVED',
+          notesEng: 'Approved by engineer',
+          notesHo: 'Approved by HO',
         },
         {
           allocationDate: new Date('2024-01-17'),
-          employeeId: createdEmployees.find(e => e.firstName === 'Aarav').id,
+          empId: createdEmployees.find(e => e.firstName === 'Aarav').id,
           expenseTypeId: createdExpenseTypes.find(et => et.name === 'Office Supplies').id,
           amount: 20.00,
           remarks: 'Stationery supplies',
-          status: 'ACTIVE',
+          statusEng: 'PENDING',
+          statusHo: 'PENDING',
+        },
+        {
+          allocationDate: new Date('2024-01-18'),
+          empId: createdEmployees.find(e => e.firstName === 'Saloni').id,
+          expenseTypeId: createdExpenseTypes.find(et => et.name === 'Conference & Trade Show Registration').id,
+          amount: 1500.00,
+          remarks: 'Annual tech conference registration',
+          billNumber: 'LPO-0029',
+          billDate: new Date('2024-01-18'),
+          statusEng: 'REJECTED',
+          statusHo: 'PENDING',
+          notesEng: 'Insufficient documentation provided',
         },
       ],
     });
 
     console.log('✅ Created allocations');
 
-    // Get created allocations
-    const createdAllocations = await prisma.allocation.findMany();
-
-    // Create sample claims
-    const claims = await prisma.claim.createMany({
-      data: [
-        {
-          employeeId: createdEmployees.find(e => e.firstName === 'Saloni').id,
-          expenseTypeId: createdExpenseTypes.find(et => et.name === 'Conference & Trade Show Registration').id,
-          allocationId: createdAllocations[0].id,
-          amount: 1500.00,
-          description: 'Annual tech conference registration fee',
-          billNumber: 'LPO-0029',
-          billDate: new Date('2024-01-15'),
-          notes: 'Annual tech conference registration fee',
-          status: 'PENDING',
-        },
-        {
-          employeeId: createdEmployees.find(e => e.firstName === 'Nehal').id,
-          expenseTypeId: createdExpenseTypes.find(et => et.name === 'Travel').id,
-          allocationId: createdAllocations[1].id,
-          amount: 850.75,
-          description: 'Client meeting travel expenses',
-          billNumber: 'LPO-0030',
-          billDate: new Date('2024-01-16'),
-          notes: 'Client meeting travel expenses',
-          status: 'APPROVED',
-          verifiedById: createdEmployees.find(e => e.role === 'ENGINEER').id,
-          verifiedAt: new Date('2024-01-17'),
-          verifiedNotes: 'Approved - all receipts provided',
-          approvedById: createdEmployees.find(e => e.role === 'HO_APPROVER').id,
-          approvedAt: new Date('2024-01-18'),
-          approvedNotes: 'Approved by HO',
-        },
-        {
-          employeeId: createdEmployees.find(e => e.firstName === 'Aarav').id,
-          expenseTypeId: createdExpenseTypes.find(et => et.name === 'Office Supplies').id,
-          allocationId: createdAllocations[2].id,
-          amount: 125.50,
-          description: 'Stationery and office materials',
-          billDate: new Date('2024-01-17'),
-          notes: 'Stationery and office materials',
-          status: 'REJECTED',
-          verifiedById: createdEmployees.find(e => e.role === 'ENGINEER').id,
-          verifiedAt: new Date('2024-01-18'),
-          verifiedNotes: 'Rejected - insufficient documentation',
-          rejectionReason: 'Please provide detailed receipts for all items',
-        },
-      ],
-    });
-
-    console.log('✅ Created claims');
-
     // Create sample notifications
     const notifications = await prisma.notification.createMany({
       data: [
         {
-          employeeId: createdEmployees.find(e => e.firstName === 'Saloni').id,
-          title: 'Claim Submitted',
-          message: 'Your expense claim for ₹1,500.00 has been submitted and is pending verification.',
-          type: 'INFO',
+          userId: createdEmployees.find(e => e.firstName === 'Saloni').id,
+          message: 'Your allocation for ₹100.00 has been approved by engineer.',
+          isRead: false,
         },
         {
-          employeeId: createdEmployees.find(e => e.firstName === 'Nehal').id,
-          title: 'Claim Approved',
-          message: 'Your expense claim for ₹850.75 has been approved by the engineer.',
-          type: 'SUCCESS',
+          userId: createdEmployees.find(e => e.firstName === 'Nehal').id,
+          message: 'Your allocation for ₹450.50 has been approved by HO.',
+          isRead: false,
         },
         {
-          employeeId: createdEmployees.find(e => e.firstName === 'Aarav').id,
-          title: 'Claim Rejected',
-          message: 'Your expense claim for ₹125.50 has been rejected. Please check the reason and resubmit.',
-          type: 'ERROR',
+          userId: createdEmployees.find(e => e.firstName === 'Aarav').id,
+          message: 'Your allocation for ₹20.00 is pending engineer approval.',
+          isRead: true,
+        },
+        {
+          userId: createdEmployees.find(e => e.firstName === 'Saloni').id,
+          message: 'Your allocation for ₹1,500.00 has been rejected by engineer.',
+          isRead: false,
         },
       ],
     });
@@ -254,8 +264,8 @@ const seedData = async () => {
     console.log('🎉 Database seeding completed successfully!');
     console.log('\n📋 Sample accounts created:');
     console.log('Admin: admin@billblister.com / password123');
-    console.log('Engineer: john.engineer@billblister.com / password123');
-    console.log('HO Approver: jane.approver@billblister.com / password123');
+    console.log('Engineer: engineer@billblister.com / password123');
+    console.log('HO Approver: approver@billblister.com / password123');
     console.log('Employee: saloni.jadav@billblister.com / password123');
     console.log('Employee: nehal.patel@billblister.com / password123');
     console.log('Employee: aarav.sharma@billblister.com / password123');
