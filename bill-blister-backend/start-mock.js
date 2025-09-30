@@ -153,6 +153,24 @@ const mockClaims = [
   },
 ];
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Bill Blister API Server is running',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth/login',
+      employees: '/api/employees',
+      expenseTypes: '/api/expense-types',
+      allocations: '/api/allocations',
+      claims: '/api/claims'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -243,7 +261,7 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`🚀 Bill Blister Mock API Server running on port ${PORT}`);

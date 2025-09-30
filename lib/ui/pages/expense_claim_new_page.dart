@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import '../shell/app_shell.dart';
 import '../../models/receipt_attachment.dart';
@@ -323,7 +324,16 @@ class _ExpenseClaimNewPageState extends State<ExpenseClaimNewPage> {
                   context: context,
                   builder: (_) => Dialog(
                     child: InteractiveViewer(
-                      child: Image.file(File(a.path), fit: BoxFit.contain),
+                      child: kIsWeb
+                        ? Container(
+                            width: 400,
+                            height: 400,
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: Icon(Icons.image, size: 100),
+                            ),
+                          )
+                        : Image.file(File(a.path), fit: BoxFit.contain),
                     ),
                   ),
                 );
@@ -349,12 +359,19 @@ class _ExpenseClaimNewPageState extends State<ExpenseClaimNewPage> {
                       if (a.isImage)
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            File(a.path),
-                            width: 72,
-                            height: 72,
-                            fit: BoxFit.cover,
-                          ),
+                          child: kIsWeb 
+                            ? Container(
+                                width: 72,
+                                height: 72,
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image, size: 36),
+                              )
+                            : Image.file(
+                                File(a.path),
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                              ),
                         )
                       else
                         const SizedBox(
@@ -539,6 +556,15 @@ class _ExpenseClaimNewPageState extends State<ExpenseClaimNewPage> {
 
   Future<void> _pickFromCamera() async {
     if (_attachments.length >= 5) return;
+    
+    // Skip camera on web platform
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Camera not available on web platform')),
+      );
+      return;
+    }
+    
     if (!await ensureCamera()) return;
     final ImagePicker picker = ImagePicker();
     final XFile? img =
@@ -557,6 +583,15 @@ class _ExpenseClaimNewPageState extends State<ExpenseClaimNewPage> {
 
   Future<void> _pickFromGallery() async {
     if (_attachments.length >= 5) return;
+    
+    // Skip gallery on web platform
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gallery not available on web platform')),
+      );
+      return;
+    }
+    
     if (!await ensurePhotos()) return;
     final ImagePicker picker = ImagePicker();
     final List<XFile> imgs = await picker.pickMultiImage(imageQuality: 80);

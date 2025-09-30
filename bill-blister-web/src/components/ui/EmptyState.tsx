@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { DocumentTextIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Button } from './button';
+import Button from './Button';
 import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {

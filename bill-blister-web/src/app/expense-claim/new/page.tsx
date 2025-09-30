@@ -7,9 +7,9 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { motion } from 'framer-motion';
 import Layout from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { expenseTypes } from '@/data/mockData';
 import { ReceiptAttachment } from '@/types';
 import { 

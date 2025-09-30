@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Layout from '@/components/layout/Layout';
 import StatusChip from '@/components/ui/StatusChip';
 import EmptyState from '@/components/ui/EmptyState';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import { mockClaims } from '@/data/mockData';
 import { Claim } from '@/types';
 import { 
