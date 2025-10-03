@@ -19,6 +19,39 @@ router.get('/health', (req, res) => {
   });
 });
 
+// Public endpoint for basic app data (no auth required)
+router.get('/public/data', async (req, res) => {
+  try {
+    const { prisma } = require('../config/database');
+    
+    // Get basic data that doesn't require authentication
+    const [expenseTypes, employees] = await Promise.all([
+      prisma.expenseType.findMany({
+        where: { status: true },
+        select: { id: true, name: true, description: true }
+      }),
+      prisma.employee.findMany({
+        where: { isActive: true },
+        select: { id: true, firstName: true, lastName: true, email: true, role: true }
+      })
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        expenseTypes,
+        employees
+      }
+    });
+  } catch (error) {
+    console.error('Public data endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to load public data'
+    });
+  }
+});
+
 // API documentation endpoint
 router.get('/', (req, res) => {
   res.status(200).json({

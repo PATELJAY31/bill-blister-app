@@ -17,6 +17,8 @@ import {
   PhotoIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
+import { useNotificationStore } from '@/store/notifications';
+import { claimsAPI } from '@/lib/api';
 
 interface Attachment {
   id: string;
@@ -77,24 +79,35 @@ const NewClaimPage: React.FC = () => {
     setAttachments(prev => prev.filter(att => att.id !== id));
   };
 
+  const { addToast } = useNotificationStore();
+  
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the API to create a new claim
+      const claimData = {
+        ...data,
+        fileUrl: attachments.length > 0 ? attachments[0].url : null,
+      };
       
-      console.log('Form data:', data);
-      console.log('Attachments:', attachments);
+      await claimsAPI.create(claimData);
       
-      // Show success message
-      alert('Expense claim submitted successfully!');
+      addToast({
+        type: 'success',
+        title: 'Success',
+        message: 'Expense claim submitted successfully!',
+      });
       
       // Navigate back to claims list
       router.push('/claims');
     } catch (error) {
       console.error('Error submitting claim:', error);
-      alert('Error submitting claim. Please try again.');
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Error submitting claim. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }

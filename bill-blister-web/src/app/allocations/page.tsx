@@ -24,6 +24,7 @@ import {
   TrashIcon,
 } from '@heroicons/react/24/outline'
 import { Allocation, AllocationStatus, User } from '@/types'
+import { allocationsAPI } from '@/lib/api'
 
 const AllocationsPage: React.FC = () => {
   const router = useRouter()
@@ -34,123 +35,6 @@ const AllocationsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<AllocationStatus | ''>('')
   const [employeeFilter, setEmployeeFilter] = useState('')
 
-  // Mock data
-  const mockAllocations: Allocation[] = [
-    {
-      id: '1',
-      allocationDate: '2024-01-15',
-      employeeId: '1',
-      employee: {
-        id: '1',
-        email: 'john.doe@company.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'EMPLOYEE',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      expenseTypeId: '1',
-      expenseType: {
-        id: '1',
-        name: 'Food & Entertainment',
-        description: 'Meals and client entertainment',
-        status: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      amount: 5000,
-      remarks: 'Monthly food allowance',
-      billNumber: 'BL-001',
-      billDate: '2024-01-15',
-      fileUrl: null,
-      notes: 'Standard monthly allocation',
-      status: 'ACTIVE',
-      statusEng: null,
-      notesEng: null,
-      statusHo: null,
-      notesHo: null,
-      originalBill: false,
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-15T10:00:00Z',
-    },
-    {
-      id: '2',
-      allocationDate: '2024-01-14',
-      employeeId: '2',
-      employee: {
-        id: '2',
-        email: 'sarah.wilson@company.com',
-        firstName: 'Sarah',
-        lastName: 'Wilson',
-        role: 'EMPLOYEE',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      expenseTypeId: '2',
-      expenseType: {
-        id: '2',
-        name: 'Travel',
-        description: 'Business travel expenses',
-        status: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      amount: 15000,
-      remarks: 'Client visit to Mumbai',
-      billNumber: 'BL-002',
-      billDate: '2024-01-14',
-      fileUrl: null,
-      notes: 'Urgent client meeting',
-      status: 'ACTIVE',
-      statusEng: null,
-      notesEng: null,
-      statusHo: null,
-      notesHo: null,
-      originalBill: true,
-      createdAt: '2024-01-14T14:30:00Z',
-      updatedAt: '2024-01-14T14:30:00Z',
-    },
-    {
-      id: '3',
-      allocationDate: '2024-01-13',
-      employeeId: '3',
-      employee: {
-        id: '3',
-        email: 'mike.johnson@company.com',
-        firstName: 'Mike',
-        lastName: 'Johnson',
-        role: 'EMPLOYEE',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      expenseTypeId: '3',
-      expenseType: {
-        id: '3',
-        name: 'Office Supplies',
-        description: 'Stationery and office equipment',
-        status: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      amount: 2500,
-      remarks: 'Monthly office supplies',
-      billNumber: 'BL-003',
-      billDate: '2024-01-13',
-      fileUrl: null,
-      notes: 'Regular monthly purchase',
-      status: 'INACTIVE',
-      statusEng: null,
-      notesEng: null,
-      statusHo: null,
-      notesHo: null,
-      originalBill: false,
-      createdAt: '2024-01-13T09:15:00Z',
-      updatedAt: '2024-01-13T09:15:00Z',
-    },
-  ]
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },
@@ -170,9 +54,10 @@ const AllocationsPage: React.FC = () => {
     const loadAllocations = async () => {
       setLoading(true)
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setAllocations(mockAllocations)
+        const response = await allocationsAPI.getAll()
+        setAllocations(response.data.data || [])
       } catch (error) {
+        console.error('Failed to load allocations:', error)
         addToast({
           type: 'error',
           title: 'Error',

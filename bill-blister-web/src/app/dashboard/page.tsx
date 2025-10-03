@@ -10,6 +10,7 @@ import StatusChip from '@/components/ui/StatusChip'
 import { useAuthStore } from '@/store/auth'
 import { useNotificationStore } from '@/store/notifications'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils'
+import { reportsAPI } from '@/lib/api'
 import {
   CurrencyDollarIcon,
   DocumentTextIcon,
@@ -53,91 +54,33 @@ const DashboardPage: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Mock data for demonstration
-  const mockStats: DashboardStats = {
-    totalClaims: 156,
-    pendingClaims: 23,
-    approvedClaims: 118,
-    rejectedClaims: 15,
-    totalAllocations: 89,
-    totalAmount: 245670.50,
-    monthlyGrowth: 12.5,
-    recentActivity: [
-      {
-        id: '1',
-        type: 'CLAIM_CREATED',
-        title: 'New Expense Claim',
-        description: 'John Doe submitted a claim for ₹2,500',
-        user: 'John Doe',
-        timestamp: '2024-01-15T10:30:00Z',
-        amount: 2500,
-      },
-      {
-        id: '2',
-        type: 'CLAIM_APPROVED',
-        title: 'Claim Approved',
-        description: 'Sarah Wilson approved a claim for ₹1,200',
-        user: 'Sarah Wilson',
-        timestamp: '2024-01-15T09:15:00Z',
-        amount: 1200,
-      },
-      {
-        id: '3',
-        type: 'ALLOCATION_CREATED',
-        title: 'New Allocation',
-        description: 'Budget allocated to Marketing team',
-        user: 'Admin User',
-        timestamp: '2024-01-15T08:45:00Z',
-        amount: 50000,
-      },
-      {
-        id: '4',
-        type: 'CLAIM_REJECTED',
-        title: 'Claim Rejected',
-        description: 'Mike Johnson rejected a claim for ₹800',
-        user: 'Mike Johnson',
-        timestamp: '2024-01-14T16:20:00Z',
-        amount: 800,
-      },
-    ],
-  }
-
-  // Mock chart data
-  const expenseTrendData = [
-    { month: 'Jan', amount: 45000, claims: 25 },
-    { month: 'Feb', amount: 52000, claims: 32 },
-    { month: 'Mar', amount: 48000, claims: 28 },
-    { month: 'Apr', amount: 61000, claims: 35 },
-    { month: 'May', amount: 55000, claims: 30 },
-    { month: 'Jun', amount: 67000, claims: 38 },
-  ]
-
-  const claimsByStatusData = [
-    { name: 'Approved', value: 118, color: '#10B981' },
-    { name: 'Pending', value: 23, color: '#F59E0B' },
-    { name: 'Rejected', value: 15, color: '#EF4444' },
-  ]
-
-  const topEmployeesData = [
-    { name: 'John Doe', claims: 15, amount: 25000 },
-    { name: 'Sarah Wilson', claims: 12, amount: 18000 },
-    { name: 'Mike Johnson', claims: 10, amount: 15000 },
-    { name: 'Emily Davis', claims: 8, amount: 12000 },
-    { name: 'David Brown', claims: 6, amount: 9000 },
-  ]
+  // Chart data state
+  const [expenseTrendData, setExpenseTrendData] = useState([])
+  const [claimsByStatusData, setClaimsByStatusData] = useState([])
+  const [topEmployeesData, setTopEmployeesData] = useState([])
 
   useEffect(() => {
-    // Simulate API call
     const loadDashboardData = async () => {
       setLoading(true)
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setStats(mockStats)
-      } catch (error) {
+        // Fetch dashboard stats
+        const statsResponse = await reportsAPI.getDashboardStats()
+        setStats(statsResponse.data.data)
+
+        // Fetch chart data
+        const claimsReportResponse = await reportsAPI.getClaimsReport()
+        const allocationsReportResponse = await reportsAPI.getAllocationsReport()
+        
+        // Process chart data from API responses
+        setExpenseTrendData(claimsReportResponse.data.data.monthlyTrend || [])
+        setClaimsByStatusData(claimsReportResponse.data.data.statusBreakdown || [])
+        setTopEmployeesData(claimsReportResponse.data.data.topEmployees || [])
+      } catch (error: any) {
+        console.error('Failed to load dashboard data:', error)
         addToast({
           type: 'error',
           title: 'Error',
-          message: 'Failed to load dashboard data',
+          message: 'Failed to load dashboard data. Please try again.',
         })
       } finally {
         setLoading(false)

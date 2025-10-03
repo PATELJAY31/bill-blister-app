@@ -24,6 +24,7 @@ import {
   DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 import { ExpenseType } from '@/types'
+import { expenseTypesAPI } from '@/lib/api'
 
 const ExpenseTypesPage: React.FC = () => {
   const router = useRouter()
@@ -35,57 +36,6 @@ const ExpenseTypesPage: React.FC = () => {
   const [selectedExpenseType, setSelectedExpenseType] = useState<ExpenseType | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  // Mock data
-  const mockExpenseTypes: ExpenseType[] = [
-    {
-      id: '1',
-      name: 'Food & Entertainment',
-      description: 'Meals, client entertainment, and business dining expenses',
-      status: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '2',
-      name: 'Travel',
-      description: 'Business travel expenses including flights, hotels, and local transportation',
-      status: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '3',
-      name: 'Office Supplies',
-      description: 'Stationery, office equipment, and general office supplies',
-      status: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '4',
-      name: 'Utilities',
-      description: 'Internet, phone, electricity, and other utility bills',
-      status: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '5',
-      name: 'Marketing',
-      description: 'Advertising, promotional materials, and marketing expenses',
-      status: false,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-15T00:00:00Z',
-    },
-    {
-      id: '6',
-      name: 'Training & Development',
-      description: 'Courses, conferences, and professional development expenses',
-      status: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-  ]
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },
@@ -97,9 +47,10 @@ const ExpenseTypesPage: React.FC = () => {
     const loadExpenseTypes = async () => {
       setLoading(true)
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setExpenseTypes(mockExpenseTypes)
+        const response = await expenseTypesAPI.getAll()
+        setExpenseTypes(response.data.data || [])
       } catch (error) {
+        console.error('Failed to load expense types:', error)
         addToast({
           type: 'error',
           title: 'Error',
@@ -135,8 +86,7 @@ const ExpenseTypesPage: React.FC = () => {
     if (!selectedExpenseType) return
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await expenseTypesAPI.delete(selectedExpenseType.id)
 
       setExpenseTypes(prevTypes =>
         prevTypes.filter(et => et.id !== selectedExpenseType.id)
@@ -151,6 +101,7 @@ const ExpenseTypesPage: React.FC = () => {
       setShowDeleteModal(false)
       setSelectedExpenseType(null)
     } catch (error) {
+      console.error('Failed to delete expense type:', error)
       addToast({
         type: 'error',
         title: 'Error',
@@ -161,8 +112,9 @@ const ExpenseTypesPage: React.FC = () => {
 
   const handleToggleStatus = async (expenseType: ExpenseType) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await expenseTypesAPI.update(expenseType.id, {
+        status: !expenseType.status
+      })
 
       setExpenseTypes(prevTypes =>
         prevTypes.map(et =>
@@ -178,6 +130,7 @@ const ExpenseTypesPage: React.FC = () => {
         message: `${expenseType.name} has been ${expenseType.status ? 'deactivated' : 'activated'}.`,
       })
     } catch (error) {
+      console.error('Failed to update expense type status:', error)
       addToast({
         type: 'error',
         title: 'Error',

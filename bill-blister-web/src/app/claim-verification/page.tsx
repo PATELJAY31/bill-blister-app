@@ -8,7 +8,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { mockClaims } from '@/data/mockData';
+import { claimsAPI } from '@/lib/api';
 import { Claim } from '@/types';
 import { 
   DocumentTextIcon, 
@@ -19,22 +19,44 @@ import {
 } from '@heroicons/react/24/outline';
 
 const ClaimVerificationPage: React.FC = () => {
-  const [claims, setClaims] = useState<Claim[]>(mockClaims.filter(claim => claim.engineerStatus === 'pending'));
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
+  // Load pending claims from API
+  React.useEffect(() => {
+    const loadClaims = async () => {
+      try {
+        setLoading(true);
+        const response = await claimsAPI.getAll({ status: 'pending' });
+        setClaims(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to load claims:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadClaims();
+  }, []);
+
   const handleApprove = async (claim: Claim) => {
     if (confirm('Are you sure you want to approve this claim?')) {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Claim approved:', claim.id);
-      alert('Claim approved successfully!');
-      
-      // Remove from pending list
-      setClaims(prev => prev.filter(c => c.id !== claim.id));
-      setSelectedClaim(null);
+      try {
+        await claimsAPI.verify(claim.id, { status: 'approved', notes: 'Approved by engineer' });
+        
+        console.log('Claim approved:', claim.id);
+        alert('Claim approved successfully!');
+        
+        // Remove from pending list
+        setClaims(prev => prev.filter(c => c.id !== claim.id));
+        setSelectedClaim(null);
+      } catch (error) {
+        console.error('Failed to approve claim:', error);
+        alert('Failed to approve claim. Please try again.');
+      }
     }
   };
 
@@ -45,17 +67,21 @@ const ClaimVerificationPage: React.FC = () => {
     }
 
     if (confirm('Are you sure you want to reject this claim?')) {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Claim rejected:', claim.id, 'Reason:', rejectReason);
-      alert('Claim rejected successfully!');
-      
-      // Remove from pending list
-      setClaims(prev => prev.filter(c => c.id !== claim.id));
-      setSelectedClaim(null);
-      setShowRejectModal(false);
-      setRejectReason('');
+      try {
+        await claimsAPI.verify(claim.id, { status: 'rejected', notes: rejectReason });
+        
+        console.log('Claim rejected:', claim.id, 'Reason:', rejectReason);
+        alert('Claim rejected successfully!');
+        
+        // Remove from pending list
+        setClaims(prev => prev.filter(c => c.id !== claim.id));
+        setSelectedClaim(null);
+        setShowRejectModal(false);
+        setRejectReason('');
+      } catch (error) {
+        console.error('Failed to reject claim:', error);
+        alert('Failed to reject claim. Please try again.');
+      }
     }
   };
 

@@ -46,9 +46,8 @@ const validateEmployee = [
     .withMessage('Invalid role'),
   
   body('loginName')
+    .optional()
     .trim()
-    .notEmpty()
-    .withMessage('Login name is required')
     .isLength({ min: 3, max: 30 })
     .withMessage('Login name must be between 3 and 30 characters')
     .matches(/^[a-zA-Z0-9_]+$/)

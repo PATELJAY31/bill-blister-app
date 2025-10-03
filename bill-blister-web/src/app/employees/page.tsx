@@ -27,6 +27,7 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline'
 import { User, UserRole } from '@/types'
+import { employeesAPI } from '@/lib/api'
 
 const EmployeesPage: React.FC = () => {
   const router = useRouter()
@@ -39,75 +40,6 @@ const EmployeesPage: React.FC = () => {
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  // Mock data
-  const mockEmployees: User[] = [
-    {
-      id: '1',
-      email: 'admin@billblister.com',
-      firstName: 'Admin',
-      lastName: 'User',
-      role: 'ADMIN',
-      phone: '+1234567890',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '2',
-      email: 'john.doe@company.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      role: 'EMPLOYEE',
-      phone: '+1234567891',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '3',
-      email: 'sarah.wilson@company.com',
-      firstName: 'Sarah',
-      lastName: 'Wilson',
-      role: 'EMPLOYEE',
-      phone: '+1234567892',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '4',
-      email: 'engineer@company.com',
-      firstName: 'Engineer',
-      lastName: 'User',
-      role: 'ENGINEER',
-      phone: '+1234567893',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '5',
-      email: 'approver@company.com',
-      firstName: 'Approver',
-      lastName: 'User',
-      role: 'HO_APPROVER',
-      phone: '+1234567894',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    {
-      id: '6',
-      email: 'mike.johnson@company.com',
-      firstName: 'Mike',
-      lastName: 'Johnson',
-      role: 'EMPLOYEE',
-      phone: '+1234567895',
-      isActive: false,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-15T00:00:00Z',
-    },
-  ]
 
   const roleOptions = [
     { value: '', label: 'All Roles' },
@@ -127,9 +59,10 @@ const EmployeesPage: React.FC = () => {
     const loadEmployees = async () => {
       setLoading(true)
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setEmployees(mockEmployees)
+        const response = await employeesAPI.getAll()
+        setEmployees(response.data.data || [])
       } catch (error) {
+        console.error('Failed to load employees:', error)
         addToast({
           type: 'error',
           title: 'Error',
@@ -168,8 +101,8 @@ const EmployeesPage: React.FC = () => {
     if (!selectedEmployee) return
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call API to delete employee
+      await employeesAPI.delete(selectedEmployee.id)
 
       setEmployees(prevEmployees =>
         prevEmployees.filter(emp => emp.id !== selectedEmployee.id)
@@ -184,6 +117,7 @@ const EmployeesPage: React.FC = () => {
       setShowDeleteModal(false)
       setSelectedEmployee(null)
     } catch (error) {
+      console.error('Failed to delete employee:', error)
       addToast({
         type: 'error',
         title: 'Error',
@@ -194,8 +128,10 @@ const EmployeesPage: React.FC = () => {
 
   const handleToggleStatus = async (employee: User) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call API to update employee status
+      await employeesAPI.update(employee.id, {
+        isActive: !employee.isActive
+      })
 
       setEmployees(prevEmployees =>
         prevEmployees.map(emp =>
@@ -211,6 +147,7 @@ const EmployeesPage: React.FC = () => {
         message: `${employee.firstName} ${employee.lastName} has been ${employee.isActive ? 'deactivated' : 'activated'}.`,
       })
     } catch (error) {
+      console.error('Failed to update employee status:', error)
       addToast({
         type: 'error',
         title: 'Error',

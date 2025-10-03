@@ -25,6 +25,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline'
 import { Claim, ClaimStatus, User, ExpenseType } from '@/types'
+import { claimsAPI } from '@/lib/api'
 
 const VerificationPage: React.FC = () => {
   const router = useRouter()
@@ -33,110 +34,11 @@ const VerificationPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<ClaimStatus | ''>('')
+  const [employeeFilter, setEmployeeFilter] = useState('')
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [verificationNotes, setVerificationNotes] = useState('')
   const [verificationAction, setVerificationAction] = useState<'approve' | 'reject' | null>(null)
-
-  // Mock data - only pending claims for verification
-  const mockClaims: Claim[] = [
-    {
-      id: '1',
-      employeeId: '1',
-      employee: {
-        id: '1',
-        email: 'john.doe@company.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'EMPLOYEE',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      expenseTypeId: '1',
-      expenseType: {
-        id: '1',
-        name: 'Food & Entertainment',
-        description: 'Meals and client entertainment',
-        status: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      amount: 2500,
-      description: 'Client dinner meeting at Taj Hotel',
-      billNumber: 'BL-001',
-      billDate: '2024-01-15',
-      fileUrl: '/receipts/sample-receipt-1.jpg',
-      notes: 'Important client discussion about Q1 project',
-      status: 'PENDING',
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-15T10:00:00Z',
-    },
-    {
-      id: '2',
-      employeeId: '2',
-      employee: {
-        id: '2',
-        email: 'sarah.wilson@company.com',
-        firstName: 'Sarah',
-        lastName: 'Wilson',
-        role: 'EMPLOYEE',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      expenseTypeId: '2',
-      expenseType: {
-        id: '2',
-        name: 'Travel',
-        description: 'Business travel expenses',
-        status: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      amount: 8500,
-      description: 'Flight to Mumbai for client meeting',
-      billNumber: 'BL-002',
-      billDate: '2024-01-14',
-      fileUrl: '/receipts/sample-receipt-2.pdf',
-      notes: 'Urgent client visit for project kickoff',
-      status: 'PENDING',
-      createdAt: '2024-01-14T14:30:00Z',
-      updatedAt: '2024-01-14T14:30:00Z',
-    },
-    {
-      id: '3',
-      employeeId: '3',
-      employee: {
-        id: '3',
-        email: 'mike.johnson@company.com',
-        firstName: 'Mike',
-        lastName: 'Johnson',
-        role: 'EMPLOYEE',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      expenseTypeId: '3',
-      expenseType: {
-        id: '3',
-        name: 'Office Supplies',
-        description: 'Stationery and office equipment',
-        status: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      amount: 1200,
-      description: 'Office stationery purchase from Staples',
-      billNumber: 'BL-003',
-      billDate: '2024-01-13',
-      fileUrl: '/receipts/sample-receipt-3.jpg',
-      notes: 'Regular office supplies for Q1',
-      status: 'PENDING',
-      createdAt: '2024-01-13T09:15:00Z',
-      updatedAt: '2024-01-13T09:15:00Z',
-    },
-  ]
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },
@@ -156,9 +58,11 @@ const VerificationPage: React.FC = () => {
     const loadClaims = async () => {
       setLoading(true)
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setClaims(mockClaims)
+        // Load claims that are pending verification
+        const response = await claimsAPI.getAll({ status: 'PENDING' })
+        setClaims(response.data.data || [])
       } catch (error) {
+        console.error('Failed to load claims:', error)
         addToast({
           type: 'error',
           title: 'Error',
@@ -202,10 +106,13 @@ const VerificationPage: React.FC = () => {
     if (!selectedClaim || !verificationAction) return
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call the API to verify the claim
+      await claimsAPI.verify(selectedClaim.id, {
+        status: verificationAction === 'approve' ? 'APPROVED' : 'REJECTED',
+        notes: verificationNotes,
+      })
 
-      // Update claim status
+      // Update local state
       setClaims(prevClaims =>
         prevClaims.map(claim =>
           claim.id === selectedClaim.id
@@ -232,6 +139,7 @@ const VerificationPage: React.FC = () => {
       setVerificationAction(null)
       setVerificationNotes('')
     } catch (error) {
+      console.error('Failed to verify claim:', error)
       addToast({
         type: 'error',
         title: 'Error',

@@ -206,6 +206,42 @@ app.post('/api/auth/login', (req, res) => {
   });
 });
 
+// API documentation endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Bill Blister API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      employees: '/api/employees',
+      expenseTypes: '/api/expense-types',
+      allocations: '/api/allocations',
+      claims: '/api/claims',
+      notifications: '/api/notifications',
+      reports: '/api/reports'
+    },
+    documentation: 'https://github.com/your-org/bill-blister-backend#api-documentation',
+  });
+});
+
+// Public endpoint for basic app data (no auth required)
+app.get('/api/public/data', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      expenseTypes: mockExpenseTypes,
+      employees: mockEmployees.map(emp => ({
+        id: emp.id,
+        firstName: emp.firstName,
+        lastName: emp.lastName,
+        email: emp.email,
+        role: emp.role
+      }))
+    }
+  });
+});
+
 // Employee endpoints
 app.get('/api/employees', (req, res) => {
   res.json(mockEmployees);

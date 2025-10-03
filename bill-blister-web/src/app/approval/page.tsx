@@ -26,6 +26,7 @@ import {
   UserCheckIcon,
 } from '@heroicons/react/24/outline'
 import { Claim, ClaimStatus, User, ExpenseType } from '@/types'
+import { claimsAPI } from '@/lib/api'
 
 const ApprovalPage: React.FC = () => {
   const router = useRouter()
@@ -34,104 +35,11 @@ const ApprovalPage: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<ClaimStatus | ''>('')
+  const [employeeFilter, setEmployeeFilter] = useState('')
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null)
   const [showApprovalModal, setShowApprovalModal] = useState(false)
   const [approvalNotes, setApprovalNotes] = useState('')
   const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | null>(null)
-
-  // Mock data - only approved claims for HO approval
-  const mockClaims: Claim[] = [
-    {
-      id: '1',
-      employeeId: '1',
-      employee: {
-        id: '1',
-        email: 'john.doe@company.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'EMPLOYEE',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      expenseTypeId: '1',
-      expenseType: {
-        id: '1',
-        name: 'Food & Entertainment',
-        description: 'Meals and client entertainment',
-        status: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      amount: 2500,
-      description: 'Client dinner meeting at Taj Hotel',
-      billNumber: 'BL-001',
-      billDate: '2024-01-15',
-      fileUrl: '/receipts/sample-receipt-1.jpg',
-      notes: 'Important client discussion about Q1 project',
-      status: 'APPROVED',
-      verifiedById: '3',
-      verifiedBy: {
-        id: '3',
-        email: 'engineer@company.com',
-        firstName: 'Engineer',
-        lastName: 'User',
-        role: 'ENGINEER',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      verifiedAt: '2024-01-15T11:00:00Z',
-      verifiedNotes: 'Verified and approved by engineer',
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-15T11:00:00Z',
-    },
-    {
-      id: '2',
-      employeeId: '2',
-      employee: {
-        id: '2',
-        email: 'sarah.wilson@company.com',
-        firstName: 'Sarah',
-        lastName: 'Wilson',
-        role: 'EMPLOYEE',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      expenseTypeId: '2',
-      expenseType: {
-        id: '2',
-        name: 'Travel',
-        description: 'Business travel expenses',
-        status: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      amount: 8500,
-      description: 'Flight to Mumbai for client meeting',
-      billNumber: 'BL-002',
-      billDate: '2024-01-14',
-      fileUrl: '/receipts/sample-receipt-2.pdf',
-      notes: 'Urgent client visit for project kickoff',
-      status: 'APPROVED',
-      verifiedById: '3',
-      verifiedBy: {
-        id: '3',
-        email: 'engineer@company.com',
-        firstName: 'Engineer',
-        lastName: 'User',
-        role: 'ENGINEER',
-        isActive: true,
-        createdAt: '2024-01-01T00:00:00Z',
-        updatedAt: '2024-01-01T00:00:00Z',
-      },
-      verifiedAt: '2024-01-14T15:30:00Z',
-      verifiedNotes: 'All documents verified and approved',
-      createdAt: '2024-01-14T14:30:00Z',
-      updatedAt: '2024-01-14T15:30:00Z',
-    },
-  ]
 
   const statusOptions = [
     { value: '', label: 'All Statuses' },
@@ -151,9 +59,11 @@ const ApprovalPage: React.FC = () => {
     const loadClaims = async () => {
       setLoading(true)
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        setClaims(mockClaims)
+        // Load claims that are verified and ready for HO approval
+        const response = await claimsAPI.getAll({ status: 'APPROVED' })
+        setClaims(response.data.data || [])
       } catch (error) {
+        console.error('Failed to load claims:', error)
         addToast({
           type: 'error',
           title: 'Error',
@@ -197,10 +107,13 @@ const ApprovalPage: React.FC = () => {
     if (!selectedClaim || !approvalAction) return
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Call the API to approve/reject the claim
+      await claimsAPI.verify(selectedClaim.id, {
+        status: approvalAction === 'approve' ? 'APPROVED' : 'REJECTED',
+        notes: approvalNotes,
+      })
 
-      // Update claim status
+      // Update local state
       setClaims(prevClaims =>
         prevClaims.map(claim =>
           claim.id === selectedClaim.id
@@ -227,6 +140,7 @@ const ApprovalPage: React.FC = () => {
       setApprovalAction(null)
       setApprovalNotes('')
     } catch (error) {
+      console.error('Failed to process claim:', error)
       addToast({
         type: 'error',
         title: 'Error',

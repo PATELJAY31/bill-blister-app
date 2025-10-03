@@ -8,19 +8,48 @@ import EmptyState from '@/components/ui/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { mockAllocations, getTotalCashIssued, getFilteredAllocations } from '@/data/mockData';
 import { Allocation } from '@/types';
+import { allocationsAPI } from '@/lib/api';
 import { CurrencyDollarIcon, UserIcon, CalendarIcon, DocumentTextIcon, FunnelIcon } from '@heroicons/react/24/outline';
 
 const AmountAllocationPage: React.FC = () => {
-  const [allocations] = useState<Allocation[]>(mockAllocations);
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     employeeName: '',
     expenseType: '',
   });
 
-  const filteredAllocations = getFilteredAllocations(filters);
-  const totalCashIssued = getTotalCashIssued();
+  // Load allocations from API
+  React.useEffect(() => {
+    const loadAllocations = async () => {
+      try {
+        setLoading(true);
+        const response = await allocationsAPI.getAll();
+        setAllocations(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to load allocations:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAllocations();
+  }, []);
+
+  // Filter allocations based on search criteria
+  const filteredAllocations = allocations.filter(allocation => {
+    if (filters.employeeName && !allocation.employeeName?.toLowerCase().includes(filters.employeeName.toLowerCase())) {
+      return false;
+    }
+    if (filters.expenseType && allocation.expenseType !== filters.expenseType) {
+      return false;
+    }
+    return true;
+  });
+
+  // Calculate total cash issued
+  const totalCashIssued = allocations.reduce((total, allocation) => total + (allocation.cashIssued || 0), 0);
 
   const handleAllocationClick = (allocation: Allocation) => {
     console.log('Allocation clicked:', allocation);

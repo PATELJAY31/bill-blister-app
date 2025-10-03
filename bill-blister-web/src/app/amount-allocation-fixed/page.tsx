@@ -8,7 +8,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import { mockAllocations, getTotalCashIssued, getFilteredAllocations } from '@/data/mockData';
+import { allocationsAPI } from '@/lib/api';
 import { Allocation } from '@/types';
 import { CurrencyDollarIcon, UserIcon, CalendarIcon, DocumentTextIcon, FunnelIcon } from '@heroicons/react/24/outline';
 

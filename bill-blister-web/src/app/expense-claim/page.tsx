@@ -8,12 +8,30 @@ import StatusChip from '@/components/ui/StatusChip';
 import EmptyState from '@/components/ui/EmptyState';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { mockClaims } from '@/data/mockData';
+import { claimsAPI } from '@/lib/api';
 import { Claim } from '@/types';
 import { DocumentTextIcon, PlusIcon, EyeIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 
 const ExpenseClaimPage: React.FC = () => {
-  const [claims] = useState<Claim[]>(mockClaims);
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load claims from API
+  React.useEffect(() => {
+    const loadClaims = async () => {
+      try {
+        setLoading(true);
+        const response = await claimsAPI.getAll();
+        setClaims(response.data.data || []);
+      } catch (error) {
+        console.error('Failed to load claims:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadClaims();
+  }, []);
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
   const filteredClaims = filter === 'all' 

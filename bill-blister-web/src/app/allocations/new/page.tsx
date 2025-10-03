@@ -17,6 +17,8 @@ import {
   PhotoIcon,
   TrashIcon
 } from '@heroicons/react/24/outline';
+import { useNotificationStore } from '@/store/notifications';
+import { allocationsAPI } from '@/lib/api';
 
 interface Attachment {
   id: string;
@@ -72,24 +74,35 @@ const NewAllocationPage: React.FC = () => {
     setAttachments(prev => prev.filter(att => att.id !== id));
   };
 
+  const { addToast } = useNotificationStore();
+  
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the API to create a new allocation
+      const allocationData = {
+        ...data,
+        fileUrl: attachments.length > 0 ? attachments[0].url : null,
+      };
       
-      console.log('Form data:', data);
-      console.log('Attachments:', attachments);
+      await allocationsAPI.create(allocationData);
       
-      // Show success message
-      alert('Allocation created successfully!');
+      addToast({
+        type: 'success',
+        title: 'Success',
+        message: 'Allocation created successfully!',
+      });
       
       // Navigate back to allocations list
       router.push('/allocations');
     } catch (error) {
       console.error('Error creating allocation:', error);
-      alert('Error creating allocation. Please try again.');
+      addToast({
+        type: 'error',
+        title: 'Error',
+        message: 'Error creating allocation. Please try again.',
+      });
     } finally {
       setIsSubmitting(false);
     }

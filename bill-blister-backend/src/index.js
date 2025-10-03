@@ -1,3 +1,6 @@
+// Load environment variables first
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -26,6 +29,9 @@ const reportRoutes = require('./routes/reports');
 require('dotenv').config();
 
 const app = express();
+
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 5000;
 
 // Initialize services
@@ -75,6 +81,25 @@ if (process.env.NODE_ENV === 'development') {
 } else {
   app.use(morgan('combined'));
 }
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Bill Blister API Server',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      health: '/health',
+      api: '/api',
+      auth: '/api/auth',
+      employees: '/api/employees',
+      allocations: '/api/allocations',
+      notifications: '/api/notifications'
+    },
+    documentation: 'https://github.com/your-repo/bill-blister-backend'
+  });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {

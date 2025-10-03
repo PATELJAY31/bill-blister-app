@@ -17,6 +17,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline'
 import { Notification, NotificationType } from '@/types'
+import { notificationsAPI } from '@/lib/api'
 
 const NotificationsPage: React.FC = () => {
   const { 
@@ -132,9 +133,13 @@ const NotificationsPage: React.FC = () => {
     const loadNotifications = async () => {
       setLoading(true)
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        // In a real app, this would be an API call
-        // For now, we'll use the mock data
+        // Load notifications from the API
+        const response = await notificationsAPI.getAll()
+        // Update the store with real notifications
+        // Note: This assumes the store has a method to set notifications
+        console.log('Loaded notifications:', response.data.data)
+      } catch (error) {
+        console.error('Failed to load notifications:', error)
       } finally {
         setLoading(false)
       }

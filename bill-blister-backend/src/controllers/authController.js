@@ -20,7 +20,7 @@ const register = asyncHandler(async (req, res) => {
     email,
     phone,
     role = 'EMPLOYEE',
-    loginName,
+    loginName: providedLoginName,
     password,
     head1,
     head2,
@@ -31,6 +31,9 @@ const register = asyncHandler(async (req, res) => {
     fullAddress1,
     fullAddress2
   } = req.body;
+
+  // Generate loginName from email if not provided
+  const loginName = providedLoginName || email.split('@')[0];
 
   // Check if user already exists
   const existingUser = await prisma.employee.findFirst({
@@ -174,8 +177,11 @@ const login = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: 'Login successful',
-    token,
-    user: userData
+    data: {
+      user: userData,
+      accessToken: token,
+      refreshToken: token // For now, using same token as refresh token
+    }
   });
 });
 

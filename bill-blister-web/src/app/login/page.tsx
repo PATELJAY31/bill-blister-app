@@ -9,6 +9,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import { useAuthStore } from '@/store/auth'
 import { useNotificationStore } from '@/store/notifications'
+import { authAPI } from '@/lib/api'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -57,25 +58,9 @@ const LoginPage: React.FC = () => {
     setLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-
-      // Mock user data - in real app, this would come from API
-      const mockUser = {
-        id: '1',
-        email: data.email,
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'ADMIN' as const,
-        phone: '+1234567890',
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-
-      const mockToken = 'mock-jwt-token'
-
-      login(mockUser, mockToken)
+      // Use the auth store's login function which handles API calls
+      await login(data.email, data.password)
+      
       addToast({
         type: 'success',
         title: 'Welcome back!',
@@ -83,11 +68,17 @@ const LoginPage: React.FC = () => {
       })
 
       router.push('/dashboard')
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Login error:', error)
+      
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Invalid email or password. Please try again.'
+      
       addToast({
         type: 'error',
         title: 'Login Failed',
-        message: 'Invalid email or password. Please try again.',
+        message: errorMessage,
       })
     } finally {
       setIsSubmitting(false)
@@ -237,20 +228,6 @@ const LoginPage: React.FC = () => {
           </Card>
         </motion.div>
 
-        {/* Demo Credentials */}
-        <motion.div variants={itemVariants} className="mt-6">
-          <Card className="bg-onNavy/10 border border-onNavy/20">
-            <CardContent className="p-4">
-              <h3 className="text-sm font-medium text-onNavy mb-2">Demo Credentials</h3>
-              <div className="space-y-1 text-xs text-onNavy-secondary">
-                <p><strong>Admin:</strong> admin@billblister.com / password123</p>
-                <p><strong>Employee:</strong> employee@billblister.com / password123</p>
-                <p><strong>Engineer:</strong> engineer@billblister.com / password123</p>
-                <p><strong>HO Approver:</strong> approver@billblister.com / password123</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
       </motion.div>
     </div>
   )

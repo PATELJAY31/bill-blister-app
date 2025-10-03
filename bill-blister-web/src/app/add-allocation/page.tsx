@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Layout from '@/components/layout/Layout';
-import { expenseTypes } from '@/data/mockData';
+import { expenseTypesAPI } from '@/lib/api';
 import { CheckIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
 const schema = yup.object({

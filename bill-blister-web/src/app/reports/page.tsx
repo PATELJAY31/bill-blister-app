@@ -9,6 +9,7 @@ import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import { formatCurrency, formatDate, formatNumber } from '@/lib/utils'
 import { useNotificationStore } from '@/store/notifications'
+import { reportsAPI } from '@/lib/api'
 import {
   ChartBarIcon,
   DocumentArrowDownIcon,
@@ -99,9 +100,18 @@ const ReportsPage: React.FC = () => {
     const loadReports = async () => {
       setLoading(true)
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        // In a real app, this would be an API call
+        // Load dashboard stats and reports from API
+        const [statsResponse, claimsResponse, allocationsResponse] = await Promise.all([
+          reportsAPI.getDashboardStats(),
+          reportsAPI.getClaimsReport(),
+          reportsAPI.getAllocationsReport()
+        ])
+        
+        setStats(statsResponse.data.data)
+        setClaimsData(claimsResponse.data.data)
+        setAllocationsData(allocationsResponse.data.data)
       } catch (error) {
+        console.error('Failed to load reports:', error)
         addToast({
           type: 'error',
           title: 'Error',

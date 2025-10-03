@@ -10,7 +10,7 @@ import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { expenseTypes } from '@/data/mockData';
+import { expenseTypesAPI } from '@/lib/api';
 import { ReceiptAttachment } from '@/types';
 import { 
   DocumentTextIcon, 
